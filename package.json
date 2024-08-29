@@ -1,0 +1,18 @@
+{
+  "name": "mira-v1-ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "fuels": "^0.92.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,4 +1,4 @@
-import {Account, AssetId, BigNumberish, ScriptTransactionRequest, TxParams,} from "fuels";
+import {Account, Address, AssetId, BigNumberish, ScriptTransactionRequest, TxParams} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {
   AddLiquidityScript,
@@ -9,7 +9,7 @@ import {
 } from "./typegen";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {PoolId} from "./model";
-import {addressInput, assetInput, contractIdInput, poolIdInput} from "./utils";
+import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput} from "./utils";
 
 export class MiraAmm {
   private readonly account: Account;
@@ -42,7 +42,6 @@ export class MiraAmm {
   }
 
   async addLiquidity(
-    createPool: boolean,
     poolId: PoolId,
     amount0Desired: BigNumberish,
     amount1Desired: BigNumberish,
@@ -51,24 +50,70 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request;
-    if (createPool) {
-      request = await this.createPoolAndAddLiquidityScript
-        .functions
-        .main(poolIdInput(poolId), amount0Desired, amount1Desired, addressInput(this.account.address), deadline)
-        .addContracts([this.ammContract])
-        .txParams(txParams ?? {})
-        .getTransactionRequest();
-    } else {
-      request = await this.addLiquidityScript
-        .functions
-        .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
-        .addContracts([this.ammContract])
-        .txParams(txParams ?? {})
-        .getTransactionRequest();
-    }
+    const request = await this.addLiquidityScript
+      .functions
+      .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
+      .addContracts([this.ammContract])
+      .txParams(txParams ?? {})
+      .getTransactionRequest();
+
+    request.addResources(
+      await this.account.getResourcesToSpend([
+        {
+          assetId: poolId[0].bits,
+          amount: amount0Desired,
+        },
+        {
+          assetId: poolId[1].bits,
+          amount: amount1Desired,
+        },
+      ])
+    );
 
     request.addVariableOutputs(1); // LP token
+
+    return request;
+  }
+
+  async createPoolAndAddLiquidity(
+    token0Contract: string,
+    token0SubId: string,
+    token1Contract: string,
+    token1SubId: string,
+    isStable: boolean,
+    amount0Desired: BigNumberish,
+    amount1Desired: BigNumberish,
+    deadline: BigNumberish,
+    txParams?: TxParams,
+  ): Promise<ScriptTransactionRequest> {
+    let request = await this.createPoolAndAddLiquidityScript
+      .functions
+      .main(contractIdInput(token0Contract), token0SubId, contractIdInput(token1Contract), token1SubId, isStable, amount0Desired, amount1Desired, addressInput(this.account.address), deadline)
+      .addContracts([this.ammContract])
+      .txParams(txParams ?? {})
+      .getTransactionRequest();
+    const token0Asset = getAssetId(token0Contract, token0SubId);
+    const token1Asset = getAssetId(token1Contract, token1SubId);
+
+    request.addResources(
+      await this.account.getResourcesToSpend([
+        {
+          assetId: token0Asset.bits,
+          amount: amount0Desired,
+        },
+        {
+          assetId: token1Asset.bits,
+          amount: amount1Desired,
+        },
+      ])
+    );
+
+    request = request.addContractInputAndOutput(Address.fromString(token0Contract));
+    if (token0Contract != token1Contract) {
+      request = request.addContractInputAndOutput(Address.fromString(token1Contract));
+    }
+
+    request.addVariableOutputs(2); // LP token x2
 
     return request;
   }
@@ -87,6 +132,15 @@ export class MiraAmm {
       .addContracts([this.ammContract])
       .txParams(txParams ?? {})
       .getTransactionRequest();
+
+    request.addResources(
+      await this.account.getResourcesToSpend([
+        {
+          assetId: getLPAssetId(this.ammContract.id.toB256(), poolId).bits,
+          amount: liquidity,
+        },
+      ])
+    );
 
     request.addVariableOutputs(2); // tokens to receive back
 

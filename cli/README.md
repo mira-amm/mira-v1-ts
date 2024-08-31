@@ -1,9 +1,21 @@
 # CLI
 
+## create-pool-and-add-liquidity
+
+```bash
+pnpx vite-node src/cli.ts create-pool-and-add-liquidity <isStable> <token0Contract> <token0SubId> <token1Contract> <token1SubId> <amountA> <amountB>
+```
+
 ## add-liquidity
 
 ```bash
-pnpx vite-node src/cli.ts add-liquidity <createPool> <isStable> <asset_a> <asset_b> <amount_a> <amount_b>
+pnpx vite-node src/cli.ts add-liquidity <isStable> <assetA> <assetB> <amountA> <amountB>
+```
+
+## remove-liquidity
+
+```bash
+pnpx vite-node src/cli.ts remove-liquidity <isStable> <assetA> <assetB> <liquidity>
 ```
 
 ## transfer-ownership
@@ -16,4 +28,10 @@ pnpx vite-node src/cli.ts transfer-ownership <newOwnerB256>
 
 ```bash
 pnpx vite-node src/cli.ts amm-meta
+```
+
+## pool-meta
+
+```bash
+pnpx vite-node src/cli.ts pool-meta <isStable> <assetA> <assetB>
 ```

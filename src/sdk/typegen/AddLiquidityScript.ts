@@ -8,16 +8,12 @@
   Fuels version: 0.94.3
 */
 
-import { Contract, Interface } from "fuels";
-import type {
-  Provider,
+import {
   Account,
-  StorageSlot,
-  AbstractAddress,
   BigNumberish,
   BN,
-  FunctionFragment,
-  InvokeFunction,
+  decompressBytecode,
+  Script,
   StrSlice,
 } from 'fuels';
 
@@ -34,6 +30,9 @@ export type AssetIdInput = { bits: string };
 export type AssetIdOutput = AssetIdInput;
 export type ContractIdInput = { bits: string };
 export type ContractIdOutput = ContractIdInput;
+
+export type AddLiquidityScriptInputs = [pool_id: [AssetIdInput, AssetIdInput, boolean], amount_0_desired: BigNumberish, amount_1_desired: BigNumberish, amount_0_min: BigNumberish, amount_1_min: BigNumberish, recipient: IdentityInput, deadline: BigNumberish];
+export type AddLiquidityScriptOutput = AssetOutput;
 
 export type AddLiquidityScriptConfigurables = Partial<{
   AMM_CONTRACT_ID: ContractIdInput;
@@ -216,31 +215,14 @@ const abi = {
   ]
 };
 
-const storageSlots: StorageSlot[] = [];
+const bytecode = decompressBytecode('H4sIAAAAAAAAA41aX2xb1Rk/dpzW0EJvSdya2z/clrQY8c+I0gUo4t45xjYm5IS0SqpgbNMGEqCNSZMStof6gbE+7CFMbKv2lJdpvEy6TtI2baXJD5tUaXvIJqZ1/6RUK1MyahRtVGuFpu73nXOufXOvQxcpuifnnvOd73x/f993o6/E2ThjQSZ+9kRzt6sB7fZt9jFjBv9ihfFreC6azLj5FBv4ejHIv14MjbPAev06x5qQyY/MLBVNdne+xk7xvtmbPFFZ0pdNpn8OAqv3xPXEAhvrYkashn2JmfAa6/bSOp6yjbE01iZD5ZxlstcsxnIZk2kZw8z3GoznK1y8z8+VeaZkjL2Mcaa9ypMl8/UkY0TbQ/dR/Z2FZvN79beazhv6YNN5Xe9vOt9OfLfh7JNdbGubxcyTJgvsh1Qhk2r+utbJUzNpeWfNs5ct6yncOWsXGvdgYTFOdlT56OwC5BaLHQuZWNsGemfy19lToBdbg94fFD3zTvT892D/ons0mb9ONJvM/0PPNp1f1Hugb86iO61WlutbCW3GE39rO5MR+TeeO6yQCV7CO5MdZi5Lc+1lmtuRCVV5wp7Hu3TMGjfztWkjX5vala8Vdudr/EFusWFxB2sO74yHcwnbyKXsXbmsvTvXYz+Y67Mf5v0zN8cGsP/QRJkPzppjr2H94bNVnp8Z1pe5sD39qsb0vxlM/1Ocgfb38jXzo3yt9H3+x7mY5z6XlF2WYXcxskuemGNibLWLMfQxpS97dRHSSG65jMZy3Vogl9SC8JMzYwehi95Wk/fPzoP/9/O1+GS+pn0AGgtSp+APvK2mFf6Wl1bOYiHQK4NGCTTeA40x0JjXl3G3z0HHR6N1N90jBzvNZVgA+4O8Z3YY+46BxnH48Sh881N9Od7EN1tuKhl8intrJIMxuGSs2M5yVjmQK5bZniJjP2LsgR+Hcb6IEaykJ6aZnppierbM9J5FxvtsQ/IH2V/12Y0u+IO/g5e7cFYadgA7x1ofP2zb6phiczFOzDXGGdj4V4z9kPi4FWdnwNdPwN9LNwWf6x0+JY/gL7vI8hQ/buC8W4azfr1a775XoXGvReiDkW2Dj6cZ74Hf0bjnbH1e636a5a04YgHiGvlhYq4q/TFUpbPAX8F1nsNf/Tx5Fs7JkN4Mh27YoavfgA3f0rz7NzXb/5rar3XHzSZ7N8m9p2437rphXj+B/aO46zuQ0Vslph8psFyes1yCB3KDPKj3g3ZqZYeW1Krw452I09VHXmYsYsGPeyrQpWZAH5vw3AX7jFIciCVJVucGxLg7ghhCNhH36Dh4npsmbO78kiMvnjiLONrMHkK/E/b5Xfu00P0HwiZWYNc78fc9OPsBnB12bBd2fhpjxJdflXn2QifoayJWpuZg/5CJL64GL5L/if01+HzqIsUCLZZCDkqdvez3/ZbNft+/cHpsHGf2rgdvFxbytV3P5mtPPpevbT7AU+eiTk70+23Ls36/vTCAfY+AxqP5WuAxyOXmGn57t/LbycbdLw2IsYhdF3H/85Py/rBH3N0j17TYnz1/2pFRkzUvyJxT+VTmnGtV+O8zkPmzPHFuCfKPx6wOE3eE7qTve3ic9sYW8LXU4PH8GWdM+z1nG0I2qZUHlP1FHjNDr+om8lIX4k127kwj3qzme4IF4BtOvAm8gjNLXvoTjF2lu7VBjyfT7Jm2pGYix8vcjhyM3J5ssudLmRd9819RXuR9c9CVjNEeOfxX78P795H7JpFbJlK++4LGDVrTZP5raf+VAmweNhF/jGcWNegjFst8VsW483VgKDzN1xEHuKWRL8D+r5H9LyGWc+iW8GArMIYGjLFbzHfRPPnSpbAYQ4+5ROV5wjh6F2QCnKN3wS4TK4ZmsSrPzixC96+B3n145uBnK8JuLGCP7Lnhhp2RD3vtKHCJzoEPpsEbF/gvUSmuxlNzaeR/rLk4LfiXaw7mUpVDbbgXdBTAHQJKX2/ry/ZaPvV7qSPy9WmvTb1Dejr5MjsAe9pF8SzXs7IbMRN8IxYKW/L52S8ldiK92l56/cI/+mZhZ0YBfIfxLPLsbOdYgeTxIt6dnxfj3r2gQbLxYcxxSXvKS/sV6XuzhAGOQ75teI4ir0/J2LoH7+ZXxDjztKLtk3sO8uyE3LZDjw+SHqVcyt6znhJn9cwAr7Ae6BhnMQ4dLwj6lojpk/LcVnWWN6YHvg0/69RHQN+y4UMX01SDYC5Nf8OPO8iPcR/YoPYGfxmG2WuEIRtgpv2gPx8D/Zi6Fxe5NvNrnEWxDzR9egm188RsGrRGeBq0uoGFaQ/tz1QN0CtJeq2wrfkz4p21R9Eju/HZBhM5KTsvMbXAqmeBKUlePpt4VPjkEVXPFCmuEV7TSvClEJ7v8dQs2bGKebN2PSdlWFr67jhkcYHGKj+dBb5rlp8C9yncv9hYe3FKjAn3p84u+nNUYNifo86dBlZGjmoFVj6HHGX8Gfb0F/D6V8TvuMxRwAA+fwp87KNlsTRinSGwN+gBp38IX6aY8YQak18HYXNb9pvCtw3h232XzmAPYeQq/ILi2XXwUAMPXyI2LOpL0j/8PATfbpJzWZ1W4gLqiF0dyLl7kDv3QibTa+fc1sFVObdb2OgAbPVhF5+TLj7T4HMZfP4TfH4BPi/rS2vh8KDp53N+vsHn/BXwuQ18bgefO8Dn6W/g88lmfOKuiAebHwedJ0AnDt2h5m6WewNBlXs1Fz4YduGDKeR+yutr4APcReKDy2vjg6CoXYAPrkif+ZDwwQuQE/LK+WgDH8yp2sXH4xnFo+nCBzdd+ODK2vggGFX4YM8a+AA2sBY+aAm78EEPzpyELur1i+ecexWP1JsQNSLiI2rOdmDsAjA+cPQtrnD2qdveGgQ1BeTYqCmUnwSpfoHNbQGWjdfvi/5Icx7YZlUTAaMK/KuJMWoi+NhW1MhB1Mgt+wKhV/F3lHwOtYfpr3UCLvwfkLXOEfCVh7zcOshWYFNeXbM+yqvQczRWo5wv4lE0lp1DLWAT9o/K2A08SmPkpNygvSnXb2vgbTPW3HTyh7hzPa/YKp+hn5Cw20AzrKG+0KwO1BmtAh8QdoHMg9sOHWR7DzIW23G0rA+UiM60xCDtWH+0jB5BRNRj8GHIpJ3muWUIerifjV7AFvQZtsJGo6KWTINPKffLYizsr0IYRc5jzFMV0o/zDvppWrM+pGxE+perhtZvlKELyPpWSeki4NhIvY6DjQCLy1puLB1ie9OYT+N+kCtiTwvN4RkCdmsVvNT2QUeQoZK/eAKH6TeE3tP+uo+94Dpr2G2POINyLXSHPo4paJNcY4Im6lnItBXy1FDfoycTD/NuM4w+RxjryQ6jUv5dxAPd26l7h12294Li4ZTL9j6t8zCI2hN1Ju5DeFLm3Z4KGh7EU4RkqjAL8rYf6y2p2g18kx4rhMGionZLoseZrRRAi3AFcAHRgm6JblLY6RWJBfzxQWBImXPpfrBlyrkVqqWwF7aP/Ea9S5rDGoqhao3SCa2RfT8xj77VRsjxHtjkvVpGMyOZjqrCs6TP4LbufeW9qKtjO7pMnZfQD+0SWF6zEEdR36F/hRo7rsFuN0PmDftMwXcatinH0m6nEB+iscPok4gYBXnXYxQ7pfThigVsoUk/J1rvZ1HP7iDRjlBfD7Ku92XIRkz4+d3w8w3w341Uo2vJkBlJRkQ9Je7YJXzXVL7LhO+Sr1BeTCarWu9RlcsjVbEfvUK8Pw1/3Qx/pXoD/VG7U+jOEjYxLfWobBb1DfU7YHcLrn6Q42fumKd6JnXb18gGPPXW51Qj5HrjLHcojrwbD/JBW+KWw4SdbPT2TMQQDt+M3w8anfpyQWEnH60BL63cYfT28jbwl6mDBrBAfDv54Fo0IL9HfDQs1HKD9hJo7ACNnaDxAGgAq1LuAB0/Ddl/Q38o16v6DP028CrZlAkZs/tkP072Tz21tMh/wr9roaqIa6k50UuDXbn7aY68XX7OpprY1aSwpV7HlrpI15QP4LforQ3a62BL6+ErhOfDWm+ERXqT5kmubImTLR1y8oBJtgT7wfcD9M5Myh3tZB/AbIW7IBv6hrFBxKmG7RTWsJ0pl+04PuLO41ojRgtZlPUE6hrEARV3NVfcbdZb9MZd1TPx2kzrg6rHLvqO/n5A6yaRa3pQe6h+JO4YFpgkuU/pZVX8XaNvKPlw9ytde5y84fKdoKH3Y98g4QXosg+9wcTKXqopI0kuvnOAj42qdrwHMi83+gMV+maxZn9gggWzEasgeg5U40esEuG6h2S9aE8DT7bDVpC7tQjl8Xrtk8X3ojo2JVn66BbBB+ojv13jnFdX95krkDX8z79O9slc366wlnqE1O8lrEQ4SH6PSVWmf5YM2RInkD/7aD3twrsOrWn0VqQeJI3qz5OhafBdFWsQz901AOytBb0qfJNCHwRxtS1puMZxZ7yecgNqYxk7s5WS8Nt6H8guAUvcK+YJR4o+EHInjYHX/Vg7IHpQ0s5hB7dMr8+7scwqvItzBG7B7zrwsr7eK5exxGjEklV41bG/pja7pTtkoocTaMNTv4Ec/n/ui9xxX4vL3lskPu7B3n5p79BN/TsR+b3C8gbyXtxf81bKsp+Fb1SOrlMz0m5knxoY248lkTOWXfWGYyOShkW4D3pStnIgc5D0+R/XWQ0bPTJreGzv33oeOhxA0WENVRWv2yWvM6j/m9lrYOvquqNC3+5U3WHT/R183oK/O/GupQ25W81dBF3YUlO6AX9tihpS1UGgFXTRBp/2ASXrTzB+rsk7+vtDzzvi6QBhD8XT2BrvHZ7RI2v6PqTeE76h96J+a+gZ3yKus53wYfr+KnxJ+dgi5re75/lbM4vCD4c6SG8vQT4q7/vixAVXzHHkQzWKIx/wRH1awQv6tMLnd4EecriPFnKwrHXVd+yNflu16Vt2tJgsImdq94Nn23UX8tlpvG8vJgsbRQx2vYdNS0yQFHeie5dxb03MN77JyF5Y0zqeXVN3XcAZOmEbxIltDVlRPkevWZzxCZ2xDmfYWLsF52wV7+p16yzldHecQwwEtqH5Or+zmotfuhtioXZvMXkkiLttEu8bMpffLaTM3/DY3X7HFrTDBRN++xnuSTEUfvohzqH/mfDX8sBTV9V9qa50/JswhYj12Kd8eF/5eWuoV37nRCyqx9yWZj0G9DMWmf6Ftz+NvgH1oyhfyL75OvWdo677YleA1gWKXWydisNh/Rbz4hh3fMdZEgcVUcO0dRvUT29tw/9wUE1DvXw9rZFsAzrq2LyF2k3iI9D11aVufFQVdPsQb4ETPTHxWfl/Ck3l+R16hztlilaLY+MH8KR7xoX/ox7BeLfwdTkmPOH4NdmTQXkKWKOeD5VtFGAbVNNQT/ce93vxPwOr7Yhj7d10BtZuUP9ToOwSdVrDLmmtibX03YVs7i7xvkF32kWXeItj7Tr8Uk5v9JSzwEENmrSO+upB3KNFvFP0xJreDujApHWUi6WP9FHeNUkv1W/6ht4M96rcV/92A18IfAMGdvce+B3qzE6nzqz3Rf++2qbRu/tFvS+qapk8bDufMQP5DPpqEstz151E/yEl/xnqjj+38dM1VDz67sjxIaNUPHFi6CgrjY6+mz82NF48WhzHv0Lc8YdjvXF0dOjE8YfGjaHJkRMQPP1kjp+YePPNkSMjQ8fHjeKx0Ynj8sXB0VHj2MSR4WMjcoJ4oJ/fih8W/MGe3+z/6MXHfypnPXTeHXlvYuToyPgHzj4UZeJn54p64vb0s31KPrfF5VM/rZ7D8nl/WT0N+WwvyeeGR9Uz+j/tGJjwWCYAAA==');
 
-export class AddLiquidityScriptInterface extends Interface {
-  constructor() {
-    super(abi);
-  }
+export class AddLiquidityScript extends Script<AddLiquidityScriptInputs, AddLiquidityScriptOutput> {
 
-  declare functions: {
-    main: FunctionFragment;
-  };
-}
-
-export class AddLiquidityScript extends Contract {
   static readonly abi = abi;
-  static readonly storageSlots = storageSlots;
+  static readonly bytecode = bytecode;
 
-  declare interface: AddLiquidityScriptInterface;
-  declare functions: {
-    main: InvokeFunction<[pool_id: [AssetIdInput, AssetIdInput, boolean], amount_0_desired: BigNumberish, amount_1_desired: BigNumberish, amount_0_min: BigNumberish, amount_1_min: BigNumberish, recipient: IdentityInput, deadline: BigNumberish], AssetOutput>;
-  };
-
-  constructor(
-    id: string | AbstractAddress,
-    accountOrProvider: Account | Provider,
-  ) {
-    super(id, abi, accountOrProvider);
+  constructor(wallet: Account) {
+    super(bytecode, abi, wallet);
   }
 }

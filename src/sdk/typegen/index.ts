@@ -9,14 +9,7 @@
 */
 
 export { AddLiquidityScript } from './AddLiquidityScript';
-export { AddLiquidityScriptFactory } from './AddLiquidityScriptFactory';
 export { CreatePoolAndAddLiquidityScript } from './CreatePoolAndAddLiquidityScript';
-export { CreatePoolAndAddLiquidityScriptFactory } from './CreatePoolAndAddLiquidityScriptFactory';
-export { MiraAmmContract } from './MiraAmmContract';
-export { MiraAmmContractFactory } from './MiraAmmContractFactory';
 export { RemoveLiquidityScript } from './RemoveLiquidityScript';
-export { RemoveLiquidityScriptFactory } from './RemoveLiquidityScriptFactory';
 export { SwapExactInputScript } from './SwapExactInputScript';
-export { SwapExactInputScriptFactory } from './SwapExactInputScriptFactory';
 export { SwapExactOutputScript } from './SwapExactOutputScript';
-export { SwapExactOutputScriptFactory } from './SwapExactOutputScriptFactory';

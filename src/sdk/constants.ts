@@ -1,0 +1,2 @@
+export const DEFAULT_AMM_CONTRACT_ID =
+  "0xb942cd8440a4fe2e2e7548cfcb1d1547881cfe02db66a463b19e1e46ae56f0ca";

@@ -38,7 +38,7 @@
   ],
   "metadataTypes": [
     {
-      "type": "(struct std::asset_id::AssetId, struct std::asset_id::AssetId, bool)",
+      "type": "(_, _, _)",
       "metadataTypeId": 0,
       "components": [
         {

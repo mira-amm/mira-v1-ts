@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "peerDependencies": {
-    "fuels": "^0.92.1"
+    "fuels": "^0.94.3"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

@@ -21,8 +21,8 @@ export class MiraAmm {
   private readonly swapExactOutputScript: SwapExactOutputScript;
 
   constructor(account: Account, contractIdOpt?: string) {
-    let contractId = contractIdOpt ?? DEFAULT_AMM_CONTRACT_ID;
-    let contractIdConfigurables = {AMM_CONTRACT_ID: contractIdInput(contractId)};
+    const contractId = contractIdOpt ?? DEFAULT_AMM_CONTRACT_ID;
+    const contractIdConfigurables = {AMM_CONTRACT_ID: contractIdInput(contractId)};
     this.account = account;
     this.ammContract = new MiraAmmContract(contractId, account);
     this.addLiquidityScript = new AddLiquidityScript(account)
@@ -42,6 +42,7 @@ export class MiraAmm {
   }
 
   async addLiquidity(
+    createPool: boolean,
     poolId: PoolId,
     amount0Desired: BigNumberish,
     amount1Desired: BigNumberish,
@@ -50,12 +51,22 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request = await this.addLiquidityScript
-      .functions
-      .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
-      .addContracts([this.ammContract])
-      .txParams(txParams ?? {})
-      .getTransactionRequest();
+    let request;
+    if (createPool) {
+      request = await this.createPoolAndAddLiquidityScript
+        .functions
+        .main(poolIdInput(poolId), amount0Desired, amount1Desired, addressInput(this.account.address), deadline)
+        .addContracts([this.ammContract])
+        .txParams(txParams ?? {})
+        .getTransactionRequest();
+    } else {
+      request = await this.addLiquidityScript
+        .functions
+        .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
+        .addContracts([this.ammContract])
+        .txParams(txParams ?? {})
+        .getTransactionRequest();
+    }
 
     request.addVariableOutputs(1); // LP token
 
@@ -70,7 +81,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request = await this.removeLiquidityScript
+    const request = await this.removeLiquidityScript
       .functions
       .main(poolIdInput(poolId), liquidity, amount0Min, amount1Min, addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -90,7 +101,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request = await this.swapExactInputScript
+    const request = await this.swapExactInputScript
       .functions
       .main(amountIn, assetInput(assetIn), amountOutMin, pools.map(poolIdInput), addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -110,7 +121,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request = await this.swapExactOutputScript
+    const request = await this.swapExactOutputScript
       .functions
       .main(amountOut, assetInput(assetOut), amountInMax, pools.map(poolIdInput), addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -120,5 +131,17 @@ export class MiraAmm {
     request.addVariableOutputs(1); // The token to receive
 
     return request;
+  }
+
+  async transferOwnership(
+    newOwner: string,
+    txParams?: TxParams,
+  ): Promise<ScriptTransactionRequest> {
+    return await this.ammContract
+      .functions
+      .transfer_ownership(addressInput(newOwner))
+      .addContracts([this.ammContract])
+      .txParams(txParams ?? {})
+      .getTransactionRequest();
   }
 }

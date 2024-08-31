@@ -13,6 +13,14 @@ export type PoolMetadata = {
   decimals1: number,
 }
 
+export type AmmMetadata = {
+  id: string,
+  fees: AmmFees,
+  hook: string | null,
+  totalAssets: BN,
+  owner: string | null,
+}
+
 export type AmmFees = {
   lpFeeVolatile: BigNumberish,
   lpFeeStable: BigNumberish,

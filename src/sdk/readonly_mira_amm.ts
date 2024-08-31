@@ -1,7 +1,7 @@
-import {AbstractAddress, Address, AssetId, BigNumberish, BN, Provider} from "fuels";
+import {AssetId, BigNumberish, BN, Provider} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
-import {AmmFees, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
+import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
 import {assetInput, poolIdInput} from "./utils";
 
 export class ReadonlyMiraAmm {
@@ -16,6 +16,16 @@ export class ReadonlyMiraAmm {
 
   id(): string {
     return this.ammContract.id.toString();
+  }
+
+  async ammMetadata(): Promise<AmmMetadata> {
+    return {
+      id: this.id(),
+      fees: await this.fees(),
+      hook: await this.hook(),
+      totalAssets: await this.totalAssets(),
+      owner: await this.owner()
+    }
   }
 
   async poolMetadata(poolId: PoolId): Promise<PoolMetadata | null> {
@@ -74,15 +84,12 @@ export class ReadonlyMiraAmm {
     }
   }
 
-  async owner(): Promise<AbstractAddress | null> {
+  async owner(): Promise<string | null> {
     const result = await this.ammContract.functions.owner().get();
     const ownershipState = result.value;
     const identity = ownershipState.Initialized;
     const bits = identity?.Address?.bits ?? identity?.ContractId?.bits;
-    if (bits) {
-      return Address.fromString(bits);
-    }
-    return null;
+    return bits || null;
   }
 
   async previewAddLiquidity(

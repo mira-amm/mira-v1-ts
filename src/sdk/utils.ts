@@ -1,6 +1,6 @@
 import {AssetIdInput, ContractIdInput, IdentityInput} from "./typegen/MiraAmmContract";
-import {AbstractAddress, Address, arrayify, AssetId, concat, sha256} from "fuels";
-import {PoolId} from "./model";
+import {AbstractAddress, Address, arrayify, AssetId, BN, concat, sha256} from "fuels";
+import {PoolId, PoolMetadata} from "./model";
 
 export function contractIdInput(contractId: string): ContractIdInput {
   return {bits: contractId};
@@ -53,4 +53,14 @@ export function getAssetId(contractId: string, subId: string): AssetId {
 export function getLPAssetId(contractId: string, poolId: PoolId): AssetId {
   const poolSubId = sha256(concat([arrayify(poolId[0].bits), arrayify(poolId[1].bits), poolId[2] ? Uint8Array.of(1) : Uint8Array.of(0)]));
   return getAssetId(contractId, poolSubId);
+}
+
+export function arrangePoolParams(pool: PoolMetadata, firstAsset: AssetId): [AssetId, BN, BN, number, number] {
+  if (firstAsset == pool.poolId[0]) {
+    return [pool.poolId[1], pool.reserve0, pool.reserve1, pool.decimals0, pool.decimals1];
+  }
+  if (firstAsset == pool.poolId[1]) {
+    return [pool.poolId[0], pool.reserve1, pool.reserve0, pool.decimals1, pool.decimals0];
+  }
+  throw new Error(`AssetId ${firstAsset.bits} not in pool (${pool.poolId[0].bits}, ${pool.poolId[1].bits}, ${pool.poolId[2]})`);
 }

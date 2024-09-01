@@ -2,7 +2,8 @@ import {AssetId, BigNumberish, BN, Provider} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
-import {assetInput, poolIdInput} from "./utils";
+import {arrangePoolParams, assetInput, poolIdInput} from "./utils";
+import {addFee, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
 
 export class ReadonlyMiraAmm {
   provider: Provider;
@@ -105,10 +106,10 @@ export class ReadonlyMiraAmm {
       throw new Error('Reserve is zero. Any number of tokens can be added');
     }
     if (isFirstToken) {
-      const otherTokenAmount = new BN(amount).div(pool.reserve0).mul(pool.reserve1);
+      const otherTokenAmount = new BN(amount).mul(pool.reserve1).div(pool.reserve0).add(new BN(1));
       return [pool.poolId[1], otherTokenAmount];
     } else {
-      const otherTokenAmount = new BN(amount).div(pool.reserve1).mul(pool.reserve0);
+      const otherTokenAmount = new BN(amount).mul(pool.reserve0).div(pool.reserve1).add(new BN(1));
       return [pool.poolId[0], otherTokenAmount];
     }
   }
@@ -126,23 +127,86 @@ export class ReadonlyMiraAmm {
       throw new Error('Not enough liquidity');
     }
 
-    const multiplier = lpTokensBN.div(pool.liquidity[1]);
-    const amount0 = pool.reserve0.mul(multiplier);
-    const amount1 = pool.reserve1.mul(multiplier);
+    const amount0 = pool.reserve0.mul(lpTokensBN).div(pool.liquidity[1]);
+    const amount1 = pool.reserve1.mul(lpTokensBN).div(pool.liquidity[1]);
     return [[pool.poolId[0], amount0], [pool.poolId[1], amount1]];
   }
 
-  async previewSwapExactInput(
-    assetIn: Asset,
+  async getAmountsOut(
+    assetIdIn: AssetId,
+    assetAmountIn: BigNumberish,
     pools: PoolId[]
-  ): Promise<Asset> {
-    throw new Error('Not implemented');
+  ): Promise<Asset[]> {
+    const assetAmount = new BN(assetAmountIn);
+    if (assetAmount.isNeg() || assetAmount.isZero()) {
+      throw new Error('Non positive input amount');
+    }
+    const fees = await this.fees();
+
+    let assetIn = assetIdIn;
+    let amountIn = assetAmount;
+    const amountsOut: Asset[] = [[assetIn, amountIn]];
+    for (const poolId of pools) {
+      const pool = await this.poolMetadata(poolId);
+      if (!pool) {
+        throw new Error('Pool not found');
+      }
+      amountIn = subtractFee(poolId, amountIn, fees);
+      let [assetOut, reserveIn, reserveOut, decimalsIn, decimalsOut] = arrangePoolParams(pool, assetIn);
+      let amountOut = getAmountOut(poolId[2], reserveIn, reserveOut, powDecimals(decimalsIn), powDecimals(decimalsOut), amountIn);
+
+      assetIn = assetOut;
+      amountIn = amountOut;
+      amountsOut.push([assetIn, amountIn]);
+    }
+    return amountsOut;
   }
 
-  async swapExactOutput(
-    assetOut: Asset,
+  async getAmountsIn(
+    assetIdOut: AssetId,
+    assetAmountOut: BigNumberish,
+    pools: PoolId[]
+  ): Promise<Asset[]> {
+    const assetAmount = new BN(assetAmountOut);
+    if (assetAmount.isNeg() || assetAmount.isZero()) {
+      throw new Error('Non positive input amount');
+    }
+    const fees = await this.fees();
+
+    let assetOut = assetIdOut;
+    let amountOut = assetAmount;
+    const amountsIn: Asset[] = [[assetOut, amountOut]];
+    for (const poolId of pools.reverse()) {
+      const pool = await this.poolMetadata(poolId);
+      if (!pool) {
+        throw new Error('Pool not found');
+      }
+      let [assetIn, reserveOut, reserveIn, decimalsOut, decimalsIn] = arrangePoolParams(pool, assetOut);
+      let amountIn = getAmountIn(poolId[2], reserveIn, reserveOut, powDecimals(decimalsIn), powDecimals(decimalsOut), amountOut);
+      amountIn = addFee(poolId, amountIn, fees);
+
+      assetOut = assetIn;
+      amountOut = amountIn;
+      amountsIn.push([assetOut, amountOut]);
+    }
+    return amountsIn;
+  }
+
+  async previewSwapExactInput(
+    assetIdIn: AssetId,
+    assetAmountIn: BigNumberish,
     pools: PoolId[]
   ): Promise<Asset> {
-    throw new Error('Not implemented');
+    const amountsOut = await this.getAmountsOut(assetIdIn, assetAmountIn, pools);
+    return amountsOut[amountsOut.length - 1];
+  }
+
+  async previewSwapExactOutput(
+    assetIdOut: AssetId,
+    assetAmountOut: BigNumberish,
+    pools: PoolId[]
+  ): Promise<Asset> {
+    const amountsIn = await this.getAmountsIn(assetIdOut, assetAmountOut, pools);
+    return amountsIn[amountsIn.length - 1];
   }
 }

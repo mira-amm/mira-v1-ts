@@ -9,7 +9,7 @@ import {
 } from "./typegen";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {PoolId} from "./model";
-import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput} from "./utils";
+import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput, reorderPoolId} from "./utils";
 
 export class MiraAmm {
   private readonly account: Account;
@@ -50,6 +50,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    poolId = reorderPoolId(poolId);
     const request = await this.addLiquidityScript
       .functions
       .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
@@ -126,6 +127,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    poolId = reorderPoolId(poolId);
     const request = await this.removeLiquidityScript
       .functions
       .main(poolIdInput(poolId), liquidity, amount0Min, amount1Min, addressInput(this.account.address), deadline)

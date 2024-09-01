@@ -2,7 +2,7 @@ import {AssetId, BigNumberish, BN, Provider} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
-import {arrangePoolParams, assetInput, poolIdInput} from "./utils";
+import {arrangePoolParams, assetInput, poolIdInput, reorderPoolId} from "./utils";
 import {addFee, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
 
 export class ReadonlyMiraAmm {
@@ -30,6 +30,7 @@ export class ReadonlyMiraAmm {
   }
 
   async poolMetadata(poolId: PoolId): Promise<PoolMetadata | null> {
+    poolId = reorderPoolId(poolId);
     const result = await this.ammContract.functions.pool_metadata(poolIdInput(poolId)).get();
     const value = result.value;
     if (!value) {
@@ -98,6 +99,7 @@ export class ReadonlyMiraAmm {
     amount: BigNumberish,
     isFirstToken: boolean,
   ): Promise<Asset> {
+    poolId = reorderPoolId(poolId);
     const pool = await this.poolMetadata(poolId);
     if (!pool) {
       throw new Error('Pool not found');
@@ -115,6 +117,7 @@ export class ReadonlyMiraAmm {
   }
 
   async getLiquidityPosition(poolId: PoolId, lpTokensAmount: BigNumberish): Promise<[Asset, Asset]> {
+    poolId = reorderPoolId(poolId);
     const lpTokensBN = new BN(lpTokensAmount);
     if (lpTokensBN.isNeg() || lpTokensBN.isZero()) {
       throw new Error('Non positive input amount');
@@ -146,7 +149,8 @@ export class ReadonlyMiraAmm {
     let assetIn = assetIdIn;
     let amountIn = assetAmount;
     const amountsOut: Asset[] = [[assetIn, amountIn]];
-    for (const poolId of pools) {
+    for (let poolId of pools) {
+      poolId = reorderPoolId(poolId);
       const pool = await this.poolMetadata(poolId);
       if (!pool) {
         throw new Error('Pool not found');
@@ -176,7 +180,8 @@ export class ReadonlyMiraAmm {
     let assetOut = assetIdOut;
     let amountOut = assetAmount;
     const amountsIn: Asset[] = [[assetOut, amountOut]];
-    for (const poolId of pools.reverse()) {
+    for (let poolId of pools.reverse()) {
+      poolId = reorderPoolId(poolId);
       const pool = await this.poolMetadata(poolId);
       if (!pool) {
         throw new Error('Pool not found');

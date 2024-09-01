@@ -29,7 +29,7 @@ export function buildPoolId(assetA: AssetId | string, assetB: AssetId | string, 
   return reorderPoolId([assetA, assetB, isStable]);
 }
 
-function reorderPoolId(poolId: PoolId): PoolId {
+export function reorderPoolId(poolId: PoolId): PoolId {
   if (assetLessThan(poolId[0], poolId[1])) {
     return poolId
   } else {
@@ -56,10 +56,10 @@ export function getLPAssetId(contractId: string, poolId: PoolId): AssetId {
 }
 
 export function arrangePoolParams(pool: PoolMetadata, firstAsset: AssetId): [AssetId, BN, BN, number, number] {
-  if (firstAsset == pool.poolId[0]) {
+  if (firstAsset.bits === pool.poolId[0].bits) {
     return [pool.poolId[1], pool.reserve0, pool.reserve1, pool.decimals0, pool.decimals1];
   }
-  if (firstAsset == pool.poolId[1]) {
+  if (firstAsset.bits === pool.poolId[1].bits) {
     return [pool.poolId[0], pool.reserve1, pool.reserve0, pool.decimals1, pool.decimals0];
   }
   throw new Error(`AssetId ${firstAsset.bits} not in pool (${pool.poolId[0].bits}, ${pool.poolId[1].bits}, ${pool.poolId[2]})`);

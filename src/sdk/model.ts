@@ -1,8 +1,8 @@
-import {AssetId, BigNumberish, type BN} from "fuels";
+import {AssetId, type BN} from "fuels";
 
 export type PoolId = [AssetId, AssetId, boolean];
 
-export type Asset = [AssetId, BigNumberish];
+export type Asset = [AssetId, BN];
 
 export type PoolMetadata = {
   poolId: PoolId,
@@ -22,10 +22,10 @@ export type AmmMetadata = {
 }
 
 export type AmmFees = {
-  lpFeeVolatile: BigNumberish,
-  lpFeeStable: BigNumberish,
-  protocolFeeVolatile: BigNumberish,
-  protocolFeeStable: BigNumberish,
+  lpFeeVolatile: BN,
+  lpFeeStable: BN,
+  protocolFeeVolatile: BN,
+  protocolFeeStable: BN,
 }
 
 export type LpAssetInfo = {
@@ -33,5 +33,5 @@ export type LpAssetInfo = {
   name: String,
   symbol: String,
   decimals: number,
-  totalSupply: BigNumberish,
+  totalSupply: BN,
 }

@@ -92,19 +92,44 @@ export class ReadonlyMiraAmm {
     return bits || null;
   }
 
-  async previewAddLiquidity(
+  async getOtherTokenToAddLiquidity(
     poolId: PoolId,
-    amount0Desired: BigNumberish,
-    amount1Desired: BigNumberish,
+    amount: BigNumberish,
+    isFirstToken: boolean,
   ): Promise<Asset> {
-    throw new Error('Not implemented');
+    const pool = await this.poolMetadata(poolId);
+    if (!pool) {
+      throw new Error('Pool not found');
+    }
+    if (pool.reserve0.isZero() || pool.reserve1.isZero()) {
+      throw new Error('Reserve is zero. Any number of tokens can be added');
+    }
+    if (isFirstToken) {
+      const otherTokenAmount = new BN(amount).div(pool.reserve0).mul(pool.reserve1);
+      return [pool.poolId[1], otherTokenAmount];
+    } else {
+      const otherTokenAmount = new BN(amount).div(pool.reserve1).mul(pool.reserve0);
+      return [pool.poolId[0], otherTokenAmount];
+    }
   }
 
-  async previewRemoveLiquidity(
-    poolId: PoolId,
-    liquidity: BigNumberish,
-  ): Promise<[number, number]> {
-    throw new Error('Not implemented');
+  async getLiquidityPosition(poolId: PoolId, lpTokensAmount: BigNumberish): Promise<[Asset, Asset]> {
+    const lpTokensBN = new BN(lpTokensAmount);
+    if (lpTokensBN.isNeg() || lpTokensBN.isZero()) {
+      throw new Error('Non positive input amount');
+    }
+    const pool = await this.poolMetadata(poolId);
+    if (!pool) {
+      throw new Error('Pool not found');
+    }
+    if (lpTokensBN > pool.liquidity[1]) {
+      throw new Error('Not enough liquidity');
+    }
+
+    const multiplier = lpTokensBN.div(pool.liquidity[1]);
+    const amount0 = pool.reserve0.mul(multiplier);
+    const amount1 = pool.reserve1.mul(multiplier);
+    return [[pool.poolId[0], amount0], [pool.poolId[1], amount1]];
   }
 
   async previewSwapExactInput(

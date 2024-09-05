@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import {cleanEnv, str} from "envalid";
 import {Address, Provider, TransactionRequest, TxParams, WalletUnlocked} from "fuels";
 import {buildPoolId, getAssetId, MiraAmm, ReadonlyMiraAmm} from "../../src/sdk";
-import {futureDeadline} from "src/utils";
+import {futureDeadline} from "./utils";
 
 const FALLBACK_RPC = "https://testnet.fuel.network/v1/graphql";
 

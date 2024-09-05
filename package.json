@@ -1,13 +1,19 @@
 {
-  "name": "mira-v1-ts",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "mira-dex-ts",
+  "version": "1.0.3",
+  "description": "TypeScript SDK for Mira DEX",
+  "main": "dist/src/sdk/index.js",
+  "types": "dist/src/sdk/index.d.ts",
+  "files": [
+    "dist/src"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "prepare": "pnpm run build",
+    "publish": "pnpm publish --access public"
   },
   "keywords": [],
-  "author": "",
+  "author": "miradeployer@gmail.com",
   "license": "ISC",
   "peerDependencies": {
     "fuels": "^0.94.3"

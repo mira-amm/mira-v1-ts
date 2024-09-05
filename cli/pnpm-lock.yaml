@@ -25,7 +25,7 @@ importers:
         version: 10.1.2
       mira-v1-ts:
         specifier: file:..
-        version: file:..(fuels@0.94.3)
+        version: mira-dex-ts@file:..(fuels@0.94.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.14.11)(typescript@5.5.4)
@@ -910,7 +910,7 @@ packages:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  mira-v1-ts@file:..:
+  mira-dex-ts@file:..:
     resolution: {directory: .., type: directory}
     peerDependencies:
       fuels: ^0.94.3
@@ -2072,7 +2072,7 @@ snapshots:
 
   minipass@7.1.2: {}
 
-  mira-v1-ts@file:..(fuels@0.94.3):
+  mira-dex-ts@file:..(fuels@0.94.3):
     dependencies:
       fuels: 0.94.3
 

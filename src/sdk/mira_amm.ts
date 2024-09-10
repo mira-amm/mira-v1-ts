@@ -157,13 +157,21 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    const request = await this.swapExactInputScript
+    let request = await this.swapExactInputScript
       .functions
       .main(amountIn, assetInput(assetIn), amountOutMin, pools.map(poolIdInput), addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
       .txParams(txParams ?? {})
       .getTransactionRequest();
 
+    request.addResources(
+      await this.account.getResourcesToSpend([
+        {
+          assetId: assetIn.bits,
+          amount: amountIn,
+        },
+      ])
+    );
     request.addVariableOutputs(1); // The token to receive
 
     return request;
@@ -177,13 +185,29 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    const request = await this.swapExactOutputScript
+    let request = await this.swapExactOutputScript
       .functions
       .main(amountOut, assetInput(assetOut), amountInMax, pools.map(poolIdInput), addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
       .txParams(txParams ?? {})
       .getTransactionRequest();
 
+    let assetIn = assetOut;
+    for (const pool of pools) {
+      if (pool[0].bits === assetIn.bits) {
+        assetIn = pool[1];
+      } else {
+        assetIn = pool[0];
+      }
+    }
+    request.addResources(
+      await this.account.getResourcesToSpend([
+        {
+          assetId: assetIn.bits,
+          amount: amountInMax,
+        },
+      ])
+    );
     request.addVariableOutputs(1); // The token to receive
 
     return request;

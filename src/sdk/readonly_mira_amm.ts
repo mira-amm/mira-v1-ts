@@ -126,7 +126,7 @@ export class ReadonlyMiraAmm {
     if (!pool) {
       throw new Error('Pool not found');
     }
-    if (lpTokensBN > pool.liquidity[1]) {
+    if (lpTokensBN.gt(pool.liquidity[1])) {
       throw new Error('Not enough liquidity');
     }
 

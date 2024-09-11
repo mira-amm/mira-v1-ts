@@ -89,9 +89,11 @@ program
       console.log("LP asset not found");
       return;
     }
+    let [symbol0, symbol1] = lpAssetInfo.name.split('-', 2);
+    symbol1 = symbol1.substring(0, symbol1.length - 3);
     console.log("id:", meta.poolId[0].bits, meta.poolId[1].bits, meta.poolId[2]);
-    console.log("reserve0:", meta.reserve0.toString());
-    console.log("reserve1:", meta.reserve1.toString());
+    console.log("reserve0:", parseFloat(meta.reserve0 .toString()) / Math.pow(10, meta.decimals0), symbol0);
+    console.log("reserve1:", parseFloat(meta.reserve1 .toString()) / Math.pow(10, meta.decimals1), symbol1);
     console.log("liquidity:", meta.liquidity[1].toString());
     console.log("liquidity asset:", meta.liquidity[0].bits);
     console.log("decimals0:", meta.decimals0);

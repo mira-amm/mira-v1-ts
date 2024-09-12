@@ -27,12 +27,8 @@ const txParams: TxParams = {
 };
 
 async function fundAndSend<T extends TransactionRequest>(request: T, operation: string) {
-  const gasCost = await wallet.getTransactionCost(request);
-  request = await wallet.fund(request, gasCost);
   const tx = await wallet.sendTransaction(request);
-
-  const response = await provider.getTransactionResponse(tx.id);
-  await response.waitForResult();
+  await tx.waitForResult();
   console.log(operation, tx.id);
 }
 
@@ -92,8 +88,8 @@ program
     let [symbol0, symbol1] = lpAssetInfo.name.split('-', 2);
     symbol1 = symbol1.substring(0, symbol1.length - 3);
     console.log("id:", meta.poolId[0].bits, meta.poolId[1].bits, meta.poolId[2]);
-    console.log("reserve0:", parseFloat(meta.reserve0 .toString()) / Math.pow(10, meta.decimals0), symbol0);
-    console.log("reserve1:", parseFloat(meta.reserve1 .toString()) / Math.pow(10, meta.decimals1), symbol1);
+    console.log("reserve0:", parseFloat(meta.reserve0.toString()) / Math.pow(10, meta.decimals0), symbol0);
+    console.log("reserve1:", parseFloat(meta.reserve1.toString()) / Math.pow(10, meta.decimals1), symbol1);
     console.log("liquidity:", meta.liquidity[1].toString());
     console.log("liquidity asset:", meta.liquidity[0].bits);
     console.log("decimals0:", meta.decimals0);

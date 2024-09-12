@@ -73,7 +73,8 @@ export class MiraAmm {
 
     request.addVariableOutputs(1); // LP token
 
-    return request;
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 
   async createPoolAndAddLiquidity(
@@ -116,7 +117,9 @@ export class MiraAmm {
 
     request.addVariableOutputs(2); // LP token x2
 
-    return request;
+
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 
   async removeLiquidity(
@@ -146,7 +149,8 @@ export class MiraAmm {
 
     request.addVariableOutputs(2); // tokens to receive back
 
-    return request;
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 
   async swapExactInput(
@@ -174,7 +178,8 @@ export class MiraAmm {
     );
     request.addVariableOutputs(1); // The token to receive
 
-    return request;
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 
   async swapExactOutput(
@@ -210,18 +215,22 @@ export class MiraAmm {
     );
     request.addVariableOutputs(1); // The token to receive
 
-    return request;
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 
   async transferOwnership(
     newOwner: string,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    return await this.ammContract
+    const request = await this.ammContract
       .functions
       .transfer_ownership(addressInput(newOwner))
       .addContracts([this.ammContract])
       .txParams(txParams ?? {})
       .getTransactionRequest();
+
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
   }
 }

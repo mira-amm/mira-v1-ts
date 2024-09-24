@@ -10,6 +10,7 @@ import {
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {PoolId} from "./model";
 import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput, reorderPoolId} from "./utils";
+import {MiraAmmContractFactory} from "./typegen/MiraAmmContractFactory";
 
 export class MiraAmm {
   private readonly account: Account;
@@ -35,6 +36,15 @@ export class MiraAmm {
       .setConfigurableConstants(contractIdConfigurables);
     this.swapExactOutputScript = new SwapExactOutputScript(account)
       .setConfigurableConstants(contractIdConfigurables);
+  }
+
+  static async deploy(wallet: Account): Promise<MiraAmm> {
+    const {waitForResult} = await MiraAmmContractFactory.deploy(wallet);
+    const {contract, transactionResult} = await waitForResult();
+
+    console.log("Deployed MiraAmm contract with status:", transactionResult.status, "and id:", contract.id.toString());
+
+    return new MiraAmm(wallet, contract.id.toString());
   }
 
   id(): string {
@@ -226,7 +236,6 @@ export class MiraAmm {
     const request = await this.ammContract
       .functions
       .transfer_ownership(addressInput(newOwner))
-      .addContracts([this.ammContract])
       .txParams(txParams ?? {})
       .getTransactionRequest();
 

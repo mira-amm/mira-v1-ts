@@ -16,7 +16,7 @@
   "author": "miradeployer@gmail.com",
   "license": "ISC",
   "peerDependencies": {
-    "fuels": "^0.94.3"
+    "fuels": "^0.94.6"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

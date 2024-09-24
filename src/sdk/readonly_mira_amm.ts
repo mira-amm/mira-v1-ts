@@ -86,6 +86,10 @@ export class ReadonlyMiraAmm {
     }
   }
 
+  async totalSupply(assetId: AssetId): Promise<BN | undefined> {
+    return (await this.ammContract.functions.total_supply(assetInput(assetId)).get()).value;
+  }
+
   async owner(): Promise<string | null> {
     const result = await this.ammContract.functions.owner().get();
     const ownershipState = result.value;

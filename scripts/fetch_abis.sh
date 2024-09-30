@@ -18,6 +18,8 @@ forc build --release
 
 cd ../..
 
+rm -rf sway_abis
+
 mkdir -p sway_abis/contracts/mira_amm_contract
 mkdir -p sway_abis/scripts/add_liquidity_script
 mkdir -p sway_abis/scripts/create_pool_and_add_liquidity_script

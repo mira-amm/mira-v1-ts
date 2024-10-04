@@ -48,7 +48,7 @@ export class MiraAmm {
   }
 
   id(): string {
-    return this.ammContract.id.toString();
+    return this.ammContract.id.toB256();
   }
 
   async addLiquidity(
@@ -126,7 +126,29 @@ export class MiraAmm {
     }
 
     request.addVariableOutputs(2); // LP token x2
+    const gasCost = await this.account.getTransactionCost(request);
+    return await this.account.fund(request, gasCost);
+  }
 
+  async createPool(
+    token0Contract: string,
+    token0SubId: string,
+    token1Contract: string,
+    token1SubId: string,
+    isStable: boolean,
+    txParams?: TxParams,
+  ): Promise<ScriptTransactionRequest> {
+    let request = await this.ammContract
+      .functions
+      .create_pool(contractIdInput(token0Contract), token0SubId, contractIdInput(token1Contract), token1SubId, isStable)
+      .txParams(txParams ?? {})
+      .getTransactionRequest();
+
+    request = request.addContractInputAndOutput(Address.fromString(token0Contract));
+    request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
+    if (token0Contract != token1Contract) {
+      request = request.addContractInputAndOutput(Address.fromString(token1Contract));
+    }
 
     const gasCost = await this.account.getTransactionCost(request);
     return await this.account.fund(request, gasCost);

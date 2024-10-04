@@ -1,8 +1,8 @@
 import {Command} from "commander";
 import * as dotenv from "dotenv";
 import {cleanEnv, str} from "envalid";
-import {Address, Provider, TransactionRequest, TxParams, WalletUnlocked} from "fuels";
-import {buildPoolId, getAssetId, MiraAmm, ReadonlyMiraAmm} from "../../src/sdk";
+import {Address, Provider, TransactionRequestLike, TxParams, WalletUnlocked} from "fuels";
+import {buildPoolId, getAssetId, MiraAmm, ReadonlyMiraAmm} from "../../src";
 import {futureDeadline} from "./utils";
 
 const FALLBACK_RPC = "https://testnet.fuel.network/v1/graphql";
@@ -26,7 +26,7 @@ const txParams: TxParams = {
   maxFee: 999_999,
 };
 
-async function fundAndSend<T extends TransactionRequest>(request: T, operation: string) {
+async function send(request: TransactionRequestLike, operation: string) {
   const tx = await wallet.sendTransaction(request);
   await tx.waitForResult();
   console.log(operation, tx.id);
@@ -45,7 +45,23 @@ program
       [tokenBContract, tokenBSubId, tokenAContract, tokenASubId, amountB, amountA];
     const deadline = await futureDeadline(provider);
     const request = await mira.createPoolAndAddLiquidity(token0Contract, token0SubId, token1Contract, token1SubId, isStable, amount0, amount1, deadline, txParams);
-    await fundAndSend(request, "create-pool-and-add-liquidity");
+    await send(request, "create-pool-and-add-liquidity");
+  });
+
+program
+  .command("create-pool isStable tokenAContract tokenASubId tokenBContract tokenBSubId")
+  .action(async (isStable, tokenAContract, tokenASubId, tokenBContract, tokenBSubId) => {
+    isStable = isStable === "true";
+    const assetA = getAssetId(tokenAContract, tokenASubId);
+    const assetB = getAssetId(tokenBContract, tokenBSubId);
+    const poolId = buildPoolId(assetA, assetB, isStable);
+
+    const [token0Contract, token0SubId, token1Contract, token1SubId] = poolId[0].bits === assetA.bits ?
+      [tokenAContract, tokenASubId, tokenBContract, tokenBSubId] :
+      [tokenBContract, tokenBSubId, tokenAContract, tokenASubId];
+
+    const request = await mira.createPool(token0Contract, token0SubId, token1Contract, token1SubId, isStable, txParams);
+    await send(request, "create-pool");
   });
 
 program
@@ -57,7 +73,7 @@ program
     const amount1 = poolId[0].bits === assetA ? amountB : amountA;
     const deadline = await futureDeadline(provider);
     const request = await mira.addLiquidity(poolId, amount0, amount1, 0, 0, deadline, txParams);
-    await fundAndSend(request, "add-liquidity");
+    await send(request, "add-liquidity");
   });
 
 program
@@ -67,7 +83,7 @@ program
     const poolId = buildPoolId(assetA, assetB, isStable);
     const deadline = await futureDeadline(provider);
     const request = await mira.removeLiquidity(poolId, liquidity, 0, 0, deadline, txParams);
-    await fundAndSend(request, "remove-liquidity");
+    await send(request, "remove-liquidity");
   });
 
 program
@@ -116,7 +132,13 @@ program
   .command("transfer-ownership newOwner")
   .action(async (newOwner) => {
     let request = await mira.transferOwnership(newOwner, txParams);
-    await fundAndSend(request, "transfer-ownership");
+    await send(request, "transfer-ownership");
+  });
+
+program
+  .command("deploy")
+  .action(async () => {
+    await MiraAmm.deploy(wallet);
   });
 
 program.parse();

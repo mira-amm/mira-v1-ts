@@ -41,10 +41,8 @@ export class MiraAmm {
   static async deploy(wallet: Account): Promise<MiraAmm> {
     const {waitForResult} = await MiraAmmContractFactory.deploy(wallet);
     const {contract, transactionResult} = await waitForResult();
-
-    console.log("Deployed MiraAmm contract with status:", transactionResult.status, "and id:", contract.id.toString());
-
-    return new MiraAmm(wallet, contract.id.toString());
+    console.log("Deployed MiraAmm contract with status:", transactionResult.status, "and id:", contract.id.toB256());
+    return new MiraAmm(wallet, contract.id.toB256());
   }
 
   id(): string {
@@ -121,6 +119,8 @@ export class MiraAmm {
     );
 
     request = request.addContractInputAndOutput(Address.fromString(token0Contract));
+    // temporary hardcode for bridged assets
+    request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
     if (token0Contract != token1Contract) {
       request = request.addContractInputAndOutput(Address.fromString(token1Contract));
     }

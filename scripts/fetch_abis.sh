@@ -13,10 +13,10 @@ echo "Building Mira v1 core and periphery"
 
 cd mira-v1-core
 forc build --release
-cd ../mira-v1-periphery
-forc build --release
 
 cd ../..
+
+pnpm fuels build --deploy
 
 rm -rf sway_abis
 

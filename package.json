@@ -16,7 +16,7 @@
   "author": "miradeployer@gmail.com",
   "license": "ISC",
   "peerDependencies": {
-    "fuels": "pr-3251"
+    "fuels": "0.0.0-pr-3251-20241007014347"
   },
   "devDependencies": {
     "typescript": "^5.2.2"

@@ -1,5 +1,5 @@
-import { Account, Address, AssetId, BigNumberish, ScriptTransactionRequest, TxParams } from "fuels";
-import { DEFAULT_AMM_CONTRACT_ID } from "./constants";
+import {Account, Address, AssetId, BigNumberish, ScriptTransactionRequest, TxParams} from "fuels";
+import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {
   AddLiquidityScriptLoader,
   CreatePoolAndAddLiquidityScriptLoader,
@@ -7,18 +7,18 @@ import {
   SwapExactInputScriptLoader,
   SwapExactOutputScriptLoader,
 } from "./typegen";
-import { MiraAmmContract } from "./typegen/MiraAmmContract";
-import { PoolId } from "./model";
-import { addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput, reorderPoolId } from "./utils";
-import { MiraAmmContractFactory } from "./typegen/MiraAmmContractFactory";
+import {MiraAmmContract} from "./typegen/MiraAmmContract";
+import {PoolId} from "./model";
+import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput, reorderPoolId} from "./utils";
+import {MiraAmmContractFactory} from "./typegen/MiraAmmContractFactory";
 
 export class MiraAmm {
   private readonly account: Account;
   private readonly ammContract: MiraAmmContract;
-  private readonly AddLiquidityScriptLoader: AddLiquidityScriptLoader;
+  private readonly addLiquidityScriptLoader: AddLiquidityScriptLoader;
   private readonly createPoolAndAddLiquidityScriptLoader: CreatePoolAndAddLiquidityScriptLoader;
-  private readonly removeLiquidityScript: RemoveLiquidityScriptLoader;
-  private readonly swapExactInputScript: SwapExactInputScriptLoader;
+  private readonly removeLiquidityScriptLoader: RemoveLiquidityScriptLoader;
+  private readonly swapExactInputScriptLoader: SwapExactInputScriptLoader;
   private readonly swapExactOutputScriptLoader: SwapExactOutputScriptLoader;
 
   constructor(account: Account, contractIdOpt?: string) {
@@ -26,13 +26,13 @@ export class MiraAmm {
     const contractIdConfigurables = {AMM_CONTRACT_ID: contractIdInput(contractId)};
     this.account = account;
     this.ammContract = new MiraAmmContract(contractId, account);
-    this.AddLiquidityScriptLoader = new AddLiquidityScriptLoader(account)
+    this.addLiquidityScriptLoader = new AddLiquidityScriptLoader(account)
       .setConfigurableConstants(contractIdConfigurables);
     this.createPoolAndAddLiquidityScriptLoader = new CreatePoolAndAddLiquidityScriptLoader(account)
       .setConfigurableConstants(contractIdConfigurables);
-    this.removeLiquidityScript = new RemoveLiquidityScriptLoader(account)
+    this.removeLiquidityScriptLoader = new RemoveLiquidityScriptLoader(account)
       .setConfigurableConstants(contractIdConfigurables);
-    this.swapExactInputScript = new SwapExactInputScriptLoader(account)
+    this.swapExactInputScriptLoader = new SwapExactInputScriptLoader(account)
       .setConfigurableConstants(contractIdConfigurables);
     this.swapExactOutputScriptLoader = new SwapExactOutputScriptLoader(account)
       .setConfigurableConstants(contractIdConfigurables);
@@ -59,7 +59,7 @@ export class MiraAmm {
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
     poolId = reorderPoolId(poolId);
-    const request = await this.AddLiquidityScriptLoader
+    const request = await this.addLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -163,7 +163,7 @@ export class MiraAmm {
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
     poolId = reorderPoolId(poolId);
-    const request = await this.removeLiquidityScript
+    const request = await this.removeLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), liquidity, amount0Min, amount1Min, addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -193,7 +193,7 @@ export class MiraAmm {
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
-    let request = await this.swapExactInputScript
+    let request = await this.swapExactInputScriptLoader
       .functions
       .main(amountIn, assetInput(assetIn), amountOutMin, pools.map(poolIdInput), addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])

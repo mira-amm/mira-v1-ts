@@ -50,4 +50,3 @@ rm -rf tmp_abis
 pnpm fuels typegen -i sway_abis/contracts/*/release/*-abi.json -o ./src/sdk/typegen --contract
 
 pnpm fuels typegen -i sway_abis/scripts/*/release/*-abi.json -o ./src/sdk/typegen --script
-pnpm fuels typegen -i sway_abis/scripts/*/out/*-abi.json -o ./src/sdk/typegen --script

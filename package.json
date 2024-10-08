@@ -16,9 +16,12 @@
   "author": "miradeployer@gmail.com",
   "license": "ISC",
   "peerDependencies": {
-    "fuels": "^0.94.8"
+    "fuels": "^0.94.9"
   },
   "devDependencies": {
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "mira-dex-ts": "^1.0.15"
   }
 }

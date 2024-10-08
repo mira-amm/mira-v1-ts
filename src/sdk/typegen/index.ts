@@ -5,11 +5,16 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 
 /*
-  Fuels version: 0.94.8
+  Fuels version: 0.94.9
 */
 
 export { AddLiquidityScript } from './AddLiquidityScript';
+export { AddLiquidityScriptLoader } from './AddLiquidityScriptLoader';
 export { CreatePoolAndAddLiquidityScript } from './CreatePoolAndAddLiquidityScript';
+export { CreatePoolAndAddLiquidityScriptLoader } from './CreatePoolAndAddLiquidityScriptLoader';
 export { RemoveLiquidityScript } from './RemoveLiquidityScript';
+export { RemoveLiquidityScriptLoader } from './RemoveLiquidityScriptLoader';
 export { SwapExactInputScript } from './SwapExactInputScript';
+export { SwapExactInputScriptLoader } from './SwapExactInputScriptLoader';
 export { SwapExactOutputScript } from './SwapExactOutputScript';
+export { SwapExactOutputScriptLoader } from './SwapExactOutputScriptLoader';

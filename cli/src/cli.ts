@@ -27,7 +27,7 @@ const txParams: TxParams = {
 };
 
 async function send(request: TransactionRequestLike, operation: string) {
-  const tx = await wallet.sendTransaction(request);
+  const tx = await wallet.sendTransaction(request, { estimateTxDependencies: true });
   await tx.waitForResult();
   console.log(operation, tx.id);
 }

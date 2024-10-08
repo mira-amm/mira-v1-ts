@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc",
     "prepare": "pnpm run build",
-    "pub": "pnpm publish --access public"
+    "pub": "pnpm publish --access public",
+    "test": "vitest --run"
   },
   "keywords": [],
   "author": "miradeployer@gmail.com",
@@ -19,7 +20,8 @@
     "fuels": "^0.94.9"
   },
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^2.1.2"
   },
   "dependencies": {
     "mira-dex-ts": "^1.0.15"

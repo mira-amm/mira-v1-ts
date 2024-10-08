@@ -45,6 +45,17 @@ export class MiraAmm {
     return new MiraAmm(wallet, contract.id.toB256());
   }
 
+  // temporary hardcode of necessary assets on mainnet
+  private addMainnetContractInputs(request: ScriptTransactionRequest): ScriptTransactionRequest {
+    if (this.ammContract.provider.getChainId() === 9889) {
+      // bridged assets
+      request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
+      // ETH
+      request = request.addContractInputAndOutput(Address.fromString("0xf62adcf2d776a65fb3b76c283b7a259a4214dfe814bfaab26aeab9580c769d74"));
+    }
+    return request;
+  }
+
   id(): string {
     return this.ammContract.id.toB256();
   }
@@ -59,7 +70,7 @@ export class MiraAmm {
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
     poolId = reorderPoolId(poolId);
-    const request = await this.addLiquidityScriptLoader
+    let request = await this.addLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -79,7 +90,8 @@ export class MiraAmm {
       ])
     );
 
-    request.addVariableOutputs(1); // LP token
+    request = this.addMainnetContractInputs(request);
+    request.addVariableOutputs(2); // LP token
 
     const gasCost = await this.account.getTransactionCost(request);
     return await this.account.fund(request, gasCost);
@@ -119,10 +131,7 @@ export class MiraAmm {
     );
 
     request = request.addContractInputAndOutput(Address.fromString(token0Contract));
-    // temporary hardcode for bridged assets
-    request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
-    // temporary hardcode for ETH
-    request = request.addContractInputAndOutput(Address.fromString("0xf62adcf2d776a65fb3b76c283b7a259a4214dfe814bfaab26aeab9580c769d74"));
+    request = this.addMainnetContractInputs(request);
     if (token0Contract != token1Contract) {
       request = request.addContractInputAndOutput(Address.fromString(token1Contract));
     }
@@ -147,10 +156,7 @@ export class MiraAmm {
       .getTransactionRequest();
 
     request = request.addContractInputAndOutput(Address.fromString(token0Contract));
-    // temporary hardcode for bridged assets
-    request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
-    // temporary hardcode for ETH
-    request = request.addContractInputAndOutput(Address.fromString("0xf62adcf2d776a65fb3b76c283b7a259a4214dfe814bfaab26aeab9580c769d74"));
+    request = this.addMainnetContractInputs(request);
     if (token0Contract != token1Contract) {
       request = request.addContractInputAndOutput(Address.fromString(token1Contract));
     }
@@ -168,7 +174,7 @@ export class MiraAmm {
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
     poolId = reorderPoolId(poolId);
-    const request = await this.removeLiquidityScriptLoader
+    let request = await this.removeLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), liquidity, amount0Min, amount1Min, addressInput(this.account.address), deadline)
       .addContracts([this.ammContract])
@@ -184,6 +190,7 @@ export class MiraAmm {
       ])
     );
 
+    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(2); // tokens to receive back
 
     const gasCost = await this.account.getTransactionCost(request);
@@ -213,6 +220,7 @@ export class MiraAmm {
         },
       ])
     );
+    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(1); // The token to receive
 
     const gasCost = await this.account.getTransactionCost(request);
@@ -250,6 +258,7 @@ export class MiraAmm {
         },
       ])
     );
+    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(1); // The token to receive
 
     const gasCost = await this.account.getTransactionCost(request);

@@ -47,12 +47,12 @@ export class MiraAmm {
 
   // temporary hardcode of necessary assets on mainnet
   private addMainnetContractInputs(request: ScriptTransactionRequest): ScriptTransactionRequest {
-    if (this.ammContract.provider.getChainId() === 9889) {
+    // if (this.ammContract.provider.getChainId() === 9889) {
       // bridged assets
       request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
       // ETH
       request = request.addContractInputAndOutput(Address.fromString("0xf62adcf2d776a65fb3b76c283b7a259a4214dfe814bfaab26aeab9580c769d74"));
-    }
+    // }
     return request;
   }
 

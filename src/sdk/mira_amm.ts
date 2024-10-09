@@ -90,7 +90,6 @@ export class MiraAmm {
       ])
     );
 
-    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(2); // LP token
 
     const gasCost = await this.account.getTransactionCost(request);
@@ -190,7 +189,6 @@ export class MiraAmm {
       ])
     );
 
-    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(2); // tokens to receive back
 
     const gasCost = await this.account.getTransactionCost(request);
@@ -220,7 +218,6 @@ export class MiraAmm {
         },
       ])
     );
-    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(1); // The token to receive
 
     const gasCost = await this.account.getTransactionCost(request);
@@ -258,7 +255,6 @@ export class MiraAmm {
         },
       ])
     );
-    request = this.addMainnetContractInputs(request);
     request.addVariableOutputs(1); // The token to receive
 
     const gasCost = await this.account.getTransactionCost(request);

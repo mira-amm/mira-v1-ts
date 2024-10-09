@@ -32,8 +32,8 @@ export type IdentityInput = Enum<{ Address: AddressInput, ContractId: ContractId
 export type IdentityOutput = Enum<{ Address: AddressOutput, ContractId: ContractIdOutput }>;
 export enum InitializationErrorInput { CannotReinitialized = 'CannotReinitialized' };
 export enum InitializationErrorOutput { CannotReinitialized = 'CannotReinitialized' };
-export type InputErrorInput = Enum<{ PoolAlreadyExists: [AssetIdInput, AssetIdInput, boolean], PoolDoesNotExist: [AssetIdInput, AssetIdInput, boolean], InvalidAsset: AssetIdInput, ZeroInputAmount: undefined, ZeroOutputAmount: undefined, IdenticalAssets: undefined, UnsortedAssetPair: undefined, LPTokenHashCollision: undefined, NotAdmin: undefined, ProtocolFeesAreTooHigh: undefined, PoolInvariantViolation: [] }>;
-export type InputErrorOutput = Enum<{ PoolAlreadyExists: [AssetIdOutput, AssetIdOutput, boolean], PoolDoesNotExist: [AssetIdOutput, AssetIdOutput, boolean], InvalidAsset: AssetIdOutput, ZeroInputAmount: void, ZeroOutputAmount: void, IdenticalAssets: void, UnsortedAssetPair: void, LPTokenHashCollision: void, NotAdmin: void, ProtocolFeesAreTooHigh: void, PoolInvariantViolation: [] }>;
+export type InputErrorInput = Enum<{ PoolAlreadyExists: [AssetIdInput, AssetIdInput, boolean], PoolDoesNotExist: [AssetIdInput, AssetIdInput, boolean], InvalidAsset: AssetIdInput, ZeroInputAmount: undefined, ZeroOutputAmount: undefined, IdenticalAssets: undefined, UnsortedAssetPair: undefined, LPTokenHashCollision: undefined, NotAdmin: undefined, ProtocolFeesAreTooHigh: undefined, PoolInvariantViolation: [], AssetSymbolNotSet: AssetIdInput, AssetDecimalsNotSet: AssetIdInput }>;
+export type InputErrorOutput = Enum<{ PoolAlreadyExists: [AssetIdOutput, AssetIdOutput, boolean], PoolDoesNotExist: [AssetIdOutput, AssetIdOutput, boolean], InvalidAsset: AssetIdOutput, ZeroInputAmount: void, ZeroOutputAmount: void, IdenticalAssets: void, UnsortedAssetPair: void, LPTokenHashCollision: void, NotAdmin: void, ProtocolFeesAreTooHigh: void, PoolInvariantViolation: [], AssetSymbolNotSet: AssetIdOutput, AssetDecimalsNotSet: AssetIdOutput }>;
 export enum ReentrancyErrorInput { NonReentrant = 'NonReentrant' };
 export enum ReentrancyErrorOutput { NonReentrant = 'NonReentrant' };
 export type StateInput = Enum<{ Uninitialized: undefined, Initialized: IdentityInput, Revoked: undefined }>;
@@ -417,6 +417,14 @@ const abi = {
         {
           "name": "PoolInvariantViolation",
           "typeId": 0
+        },
+        {
+          "name": "AssetSymbolNotSet",
+          "typeId": 25
+        },
+        {
+          "name": "AssetDecimalsNotSet",
+          "typeId": 25
         }
       ]
     },
@@ -1222,12 +1230,12 @@ const abi = {
     {
       "name": "LP_FEE_VOLATILE",
       "concreteTypeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0",
-      "offset": 61520
+      "offset": 62440
     },
     {
       "name": "LP_FEE_STABLE",
       "concreteTypeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0",
-      "offset": 61512
+      "offset": 62432
     }
   ]
 };

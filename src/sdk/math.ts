@@ -1,6 +1,5 @@
 import {BN} from "fuels";
 import {AmmFees, PoolId} from "./model";
-import {InsufficientReservesError} from "./errors";
 
 const BASIS_POINTS = 10000;
 const ONE_E_18 = new BN(10).pow(new BN(18));
@@ -44,9 +43,6 @@ export function getAmountIn(
   powDecimalsOut: BN,
   outputAmount: BN
 ): BN {
-  if (outputAmount.gt(reserveOut)) {
-    throw new InsufficientReservesError();
-  }
   if (isStable) {
     const xy: BN = k(true, reserveIn, reserveOut, powDecimalsIn, powDecimalsOut);
 

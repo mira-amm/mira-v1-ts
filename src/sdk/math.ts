@@ -2,11 +2,20 @@ import {BN} from "fuels";
 import {AmmFees, PoolId} from "./model";
 import {InsufficientReservesError} from "./errors";
 
-const BASIS_POINTS = 10000;
+const BASIS_POINTS = new BN(10000);
 const ONE_E_18 = new BN(10).pow(new BN(18));
 
 function adjust(amount: BN, powDecimals: BN): BN {
   return amount.mul(ONE_E_18).div(powDecimals);
+}
+
+export function roundingUpDivision(nominator: BN, denominator: BN): BN {
+  let roundingDownDivisionResult = nominator.div(denominator);
+  if (nominator.mod(denominator).isZero()) {
+    return roundingDownDivisionResult;
+  } else {
+    return roundingDownDivisionResult.add(new BN(1));
+  }
 }
 
 export function getAmountOut(
@@ -60,9 +69,12 @@ export function getAmountIn(
       reserveInAdjusted
     ).sub(reserveInAdjusted);
 
-    return y.mul(powDecimalsIn).div(ONE_E_18);
+    return roundingUpDivision(y.mul(powDecimalsIn), ONE_E_18);
   } else {
-    return outputAmount.mul(reserveIn).div(reserveOut.sub(outputAmount)).add(new BN(1));
+    return roundingUpDivision(
+      outputAmount.mul(reserveIn),
+      reserveOut.sub(outputAmount)
+    );
   }
 }
 
@@ -151,24 +163,11 @@ export function addFee(poolId: PoolId, amount: BN, ammFees: AmmFees): BN {
 
 function calculateFeeToSubtract(amount: BN, fee: BN): BN {
   const nominator = amount.mul(fee);
-  let calculatedFee = nominator.div(BASIS_POINTS);
-
-  if (!nominator.mod(BASIS_POINTS).isZero()) {
-    calculatedFee = calculatedFee.add(new BN(1));
-  }
-
-  return calculatedFee;
+  return roundingUpDivision(nominator, BASIS_POINTS);
 }
 
 function calculateFeeToAdd(amount: BN, fee: BN): BN {
   const nominator = amount.mul(fee);
-  const denominator = new BN(BASIS_POINTS).sub(fee);
-  let calculatedFee = nominator.div(denominator);
-
-  // If there is a remainder, we add 1 to the fee to round up
-  if (!nominator.mod(denominator).isZero()) {
-    calculatedFee = calculatedFee.add(new BN(1));
-  }
-
-  return calculatedFee;
+  const denominator = BASIS_POINTS.sub(fee);
+  return roundingUpDivision(nominator, denominator);
 }

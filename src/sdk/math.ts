@@ -17,9 +17,6 @@ export function getAmountOut(
   powDecimalsOut: BN,
   inputAmount: BN
 ): BN {
-  if (inputAmount.gt(reserveIn)) {
-    throw new InsufficientReservesError();
-  }
   if (isStable) {
     const xy: BN = k(true, reserveIn, reserveOut, powDecimalsIn, powDecimalsOut);
 

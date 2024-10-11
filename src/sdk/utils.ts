@@ -64,3 +64,17 @@ export function arrangePoolParams(pool: PoolMetadata, firstAsset: AssetId): [Ass
   }
   throw new Error(`AssetId ${firstAsset.bits} not in pool (${pool.poolId[0].bits}, ${pool.poolId[1].bits}, ${pool.poolId[2]})`);
 }
+
+export function reorderAssetContracts(tokenAContract: string,
+                                      tokenASubId: string,
+                                      tokenBContract: string,
+                                      tokenBSubId: string,
+                                      isStable: boolean): [string, string, string, string] {
+  const assetA = getAssetId(tokenAContract, tokenASubId);
+  const assetB = getAssetId(tokenBContract, tokenBSubId);
+  const poolId = buildPoolId(assetA, assetB, isStable);
+  const [token0Contract, token0SubId, token1Contract, token1SubId] = poolId[0].bits === assetA.bits ?
+    [tokenAContract, tokenASubId, tokenBContract, tokenBSubId] :
+    [tokenBContract, tokenBSubId, tokenAContract, tokenASubId];
+  return [token0Contract, token0SubId, token1Contract, token1SubId]
+}

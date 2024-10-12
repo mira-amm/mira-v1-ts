@@ -26,6 +26,6 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "mira-dex-ts": "^1.0.21"
+    "mira-dex-ts": "^1.0.26"
   }
 }

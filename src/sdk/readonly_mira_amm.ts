@@ -218,4 +218,29 @@ export class ReadonlyMiraAmm {
     const amountsIn = await this.getAmountsIn(assetIdOut, assetAmountOut, pools);
     return amountsIn[amountsIn.length - 1];
   }
+
+  async getCurrentRate(
+    assetIdIn: AssetId,
+    pools: PoolId[]
+  ): Promise<[BN, number?, number?]> {
+    let currentRate = new BN(1);
+    let assetIn = assetIdIn;
+    let assetDecimalsIn, assetDecimalsOut;
+    for (const poolId of pools) {
+      const pool = await this.poolMetadata(poolId);
+      if (!pool) {
+        throw new Error(`Pool not found ${poolId}`);
+      }
+      const [reserveIn, reserveOut, assetOut, decimalsIn, decimalsOut] = poolId[0].bits === assetIn.bits ?
+        [pool.reserve0, pool.reserve1, poolId[1], pool.decimals0, pool.decimals1] :
+        [pool.reserve1, pool.reserve0, poolId[0], pool.decimals1, pool.decimals0];
+      if (assetIdIn == assetIn) {
+        assetDecimalsIn = decimalsIn;
+      }
+      currentRate = currentRate.mul(reserveOut).div(reserveIn);
+      assetIn = assetOut;
+      assetDecimalsOut = decimalsOut;
+    }
+    return [currentRate, assetDecimalsIn, assetDecimalsOut];
+  }
 }

@@ -1,4 +1,4 @@
-import {Account, Address, AssetId, BigNumberish, ScriptTransactionRequest, TxParams} from "fuels";
+import {Account, Address, AssetId, BigNumberish, CoinQuantityLike, ScriptTransactionRequest, TxParams} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {
   AddLiquidityScriptLoader,
@@ -9,7 +9,16 @@ import {
 } from "./typegen";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {PoolId} from "./model";
-import {addressInput, assetInput, contractIdInput, getAssetId, getLPAssetId, poolIdInput, reorderPoolId} from "./utils";
+import {
+  addressInput,
+  assetInput,
+  contractIdInput,
+  getAssetId,
+  getLPAssetId,
+  poolIdInput,
+  reorderAssetContracts,
+  reorderPoolId
+} from "./utils";
 import {MiraAmmContractFactory} from "./typegen/MiraAmmContractFactory";
 
 export class MiraAmm {
@@ -45,31 +54,24 @@ export class MiraAmm {
     return new MiraAmm(wallet, contract.id.toB256());
   }
 
-  // temporary hardcode of necessary assets on mainnet
-  private addMainnetContractInputs(request: ScriptTransactionRequest): ScriptTransactionRequest {
-    // if (this.ammContract.provider.getChainId() === 9889) {
-      // bridged assets
-      request = request.addContractInputAndOutput(Address.fromString("0x0ceafc5ef55c66912e855917782a3804dc489fb9e27edfd3621ea47d2a281156"));
-      // ETH
-      request = request.addContractInputAndOutput(Address.fromString("0xf62adcf2d776a65fb3b76c283b7a259a4214dfe814bfaab26aeab9580c769d74"));
-    // }
-    return request;
-  }
-
   id(): string {
     return this.ammContract.id.toB256();
   }
 
   async addLiquidity(
     poolId: PoolId,
-    amount0Desired: BigNumberish,
-    amount1Desired: BigNumberish,
-    amount0Min: BigNumberish,
-    amount1Min: BigNumberish,
+    amountADesired: BigNumberish,
+    amountBDesired: BigNumberish,
+    amountAMin: BigNumberish,
+    amountBMin: BigNumberish,
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    const assetA = poolId[0];
     poolId = reorderPoolId(poolId);
+    const [amount0Desired, amount1Desired, amount0Min, amount1Min] = assetA.bits === poolId[0].bits ?
+      [amountADesired, amountBDesired, amountAMin, amountBMin] :
+      [amountBDesired, amountADesired, amountBMin, amountAMin];
     let request = await this.addLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), amount0Desired, amount1Desired, amount0Min, amount1Min, addressInput(this.account.address), deadline)
@@ -77,36 +79,33 @@ export class MiraAmm {
       .txParams(txParams ?? {})
       .getTransactionRequest();
 
-    request.addResources(
-      await this.account.getResourcesToSpend([
-        {
-          assetId: poolId[0].bits,
-          amount: amount0Desired,
-        },
-        {
-          assetId: poolId[1].bits,
-          amount: amount1Desired,
-        },
-      ])
-    );
+    const inputAssets = [
+      {
+        assetId: poolId[0].bits,
+        amount: amount0Desired,
+      },
+      {
+        assetId: poolId[1].bits,
+        amount: amount1Desired,
+      },
+    ];
 
-    request.addVariableOutputs(2); // LP token
-
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    return await this.prepareRequest(request, 2, inputAssets);
   }
 
   async createPoolAndAddLiquidity(
-    token0Contract: string,
-    token0SubId: string,
-    token1Contract: string,
-    token1SubId: string,
+    tokenAContract: string,
+    tokenASubId: string,
+    tokenBContract: string,
+    tokenBSubId: string,
     isStable: boolean,
-    amount0Desired: BigNumberish,
-    amount1Desired: BigNumberish,
+    amountADesired: BigNumberish,
+    amountBDesired: BigNumberish,
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    const [token0Contract, token0SubId, token1Contract, token1SubId] = reorderAssetContracts(tokenAContract, tokenASubId, tokenBContract, tokenBSubId, isStable);
+    const [amount0Desired, amount1Desired] = tokenAContract === token0Contract ? [amountADesired, amountBDesired] : [amountBDesired, amountADesired];
     let request = await this.createPoolAndAddLiquidityScriptLoader
       .functions
       .main(contractIdInput(token0Contract), token0SubId, contractIdInput(token1Contract), token1SubId, isStable, amount0Desired, amount1Desired, addressInput(this.account.address), deadline)
@@ -116,63 +115,50 @@ export class MiraAmm {
     const token0Asset = getAssetId(token0Contract, token0SubId);
     const token1Asset = getAssetId(token1Contract, token1SubId);
 
-    request.addResources(
-      await this.account.getResourcesToSpend([
-        {
-          assetId: token0Asset.bits,
-          amount: amount0Desired,
-        },
-        {
-          assetId: token1Asset.bits,
-          amount: amount1Desired,
-        },
-      ])
-    );
+    const inputAssets = [
+      {
+        assetId: token0Asset.bits,
+        amount: amount0Desired,
+      },
+      {
+        assetId: token1Asset.bits,
+        amount: amount1Desired,
+      },
+    ];
 
-    request = request.addContractInputAndOutput(Address.fromString(token0Contract));
-    request = this.addMainnetContractInputs(request);
-    if (token0Contract != token1Contract) {
-      request = request.addContractInputAndOutput(Address.fromString(token1Contract));
-    }
-
-    request.addVariableOutputs(2); // LP token x2
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    return await this.prepareRequest(request, 2, inputAssets, [token0Contract, token1Contract]);
   }
 
   async createPool(
-    token0Contract: string,
-    token0SubId: string,
-    token1Contract: string,
-    token1SubId: string,
+    tokenAContract: string,
+    tokenASubId: string,
+    tokenBContract: string,
+    tokenBSubId: string,
     isStable: boolean,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    const [token0Contract, token0SubId, token1Contract, token1SubId] = reorderAssetContracts(tokenAContract, tokenASubId, tokenBContract, tokenBSubId, isStable);
     let request = await this.ammContract
       .functions
       .create_pool(contractIdInput(token0Contract), token0SubId, contractIdInput(token1Contract), token1SubId, isStable)
       .txParams(txParams ?? {})
       .getTransactionRequest();
-
-    request = request.addContractInputAndOutput(Address.fromString(token0Contract));
-    request = this.addMainnetContractInputs(request);
-    if (token0Contract != token1Contract) {
-      request = request.addContractInputAndOutput(Address.fromString(token1Contract));
-    }
-
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    return await this.prepareRequest(request, 0, [], [token0Contract, token1Contract]);
   }
 
   async removeLiquidity(
     poolId: PoolId,
     liquidity: BigNumberish,
-    amount0Min: BigNumberish,
-    amount1Min: BigNumberish,
+    amountAMin: BigNumberish,
+    amountBMin: BigNumberish,
     deadline: BigNumberish,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
+    const assetA = poolId[0];
     poolId = reorderPoolId(poolId);
+    const [amount0Min, amount1Min] = assetA.bits === poolId[0].bits ?
+      [amountAMin, amountBMin] :
+      [amountBMin, amountAMin];
     let request = await this.removeLiquidityScriptLoader
       .functions
       .main(poolIdInput(poolId), liquidity, amount0Min, amount1Min, addressInput(this.account.address), deadline)
@@ -180,19 +166,12 @@ export class MiraAmm {
       .txParams(txParams ?? {})
       .getTransactionRequest();
 
-    request.addResources(
-      await this.account.getResourcesToSpend([
-        {
-          assetId: getLPAssetId(this.ammContract.id.toB256(), poolId).bits,
-          amount: liquidity,
-        },
-      ])
-    );
+    const inputAssets = [{
+      assetId: getLPAssetId(this.ammContract.id.toB256(), poolId).bits,
+      amount: liquidity,
+    }];
 
-    request.addVariableOutputs(2); // tokens to receive back
-
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    return await this.prepareRequest(request, 2, inputAssets);
   }
 
   async swapExactInput(
@@ -210,18 +189,12 @@ export class MiraAmm {
       .txParams(txParams ?? {})
       .getTransactionRequest();
 
-    request.addResources(
-      await this.account.getResourcesToSpend([
-        {
-          assetId: assetIn.bits,
-          amount: amountIn,
-        },
-      ])
-    );
-    request.addVariableOutputs(1); // The token to receive
+    const inputAssets = [{
+      assetId: assetIn.bits,
+      amount: amountIn,
+    }];
 
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    return await this.prepareRequest(request, 1, inputAssets);
   }
 
   async swapExactOutput(
@@ -247,18 +220,12 @@ export class MiraAmm {
         assetIn = pool[0];
       }
     }
-    request.addResources(
-      await this.account.getResourcesToSpend([
-        {
-          assetId: assetIn.bits,
-          amount: amountInMax,
-        },
-      ])
-    );
-    request.addVariableOutputs(1); // The token to receive
 
-    const gasCost = await this.account.getTransactionCost(request);
-    return await this.account.fund(request, gasCost);
+    const inputAssets = [{
+      assetId: assetIn.bits,
+      amount: amountInMax,
+    }];
+    return await this.prepareRequest(request, 1, inputAssets);
   }
 
   async transferOwnership(
@@ -270,8 +237,28 @@ export class MiraAmm {
       .transfer_ownership(addressInput(newOwner))
       .txParams(txParams ?? {})
       .getTransactionRequest();
+    return await this.prepareRequest(request);
+  }
 
+  private async fundRequest(request: ScriptTransactionRequest): Promise<ScriptTransactionRequest> {
     const gasCost = await this.account.getTransactionCost(request);
     return await this.account.fund(request, gasCost);
+  }
+
+  private async prepareRequest(request: ScriptTransactionRequest,
+                               variableOutputs: number = 0,
+                               inputAssets: CoinQuantityLike[] = [],
+                               inputContracts: string[] = []): Promise<ScriptTransactionRequest> {
+    if (variableOutputs > 0) {
+      request.addVariableOutputs(variableOutputs);
+    }
+    request.addResources(
+      await this.account.getResourcesToSpend(inputAssets)
+    );
+    const uniqueContracts = new Set(inputContracts.map(c => Address.fromAddressOrString(c)));
+    for (const contract of uniqueContracts) {
+      request.addContractInputAndOutput(contract);
+    }
+    return this.fundRequest(request);
   }
 }

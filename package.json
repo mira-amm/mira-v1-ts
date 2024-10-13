@@ -1,6 +1,6 @@
 {
   "name": "mira-dex-ts",
-  "version": "1.0.20",
+  "version": "1.0.26",
   "description": "TypeScript SDK for Mira DEX",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,6 +8,7 @@
     "dist"
   ],
   "scripts": {
+    "test": "jest",
     "build": "tsc",
     "prepare": "pnpm run build",
     "pub": "pnpm publish --access public"
@@ -19,9 +20,12 @@
     "fuels": "^0.96.0"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.13",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "mira-dex-ts": "^1.0.15"
+    "mira-dex-ts": "^1.0.26"
   }
 }

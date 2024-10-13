@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "mira-v1-ts": "file:..",
-    "fuels": "^0.95.0",
+    "fuels": "^0.96.0",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",

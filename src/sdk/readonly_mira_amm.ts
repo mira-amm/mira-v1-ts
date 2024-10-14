@@ -5,6 +5,8 @@ import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./
 import {arrangePoolParams, assetInput, poolIdInput, reorderPoolId} from "./utils";
 import {addFee, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
 
+const DECIMALS_PRECISION = 1000000000000
+
 export class ReadonlyMiraAmm {
   provider: Provider;
   ammContract: MiraAmmContract;
@@ -222,8 +224,8 @@ export class ReadonlyMiraAmm {
   async getCurrentRate(
     assetIdIn: AssetId,
     pools: PoolId[]
-  ): Promise<[BN, number?, number?]> {
-    let currentRate = new BN(1);
+  ): Promise<[number, number?, number?]> {
+    let currentRate = new BN(DECIMALS_PRECISION);
     let assetIn = assetIdIn;
     let assetDecimalsIn, assetDecimalsOut;
     for (const poolId of pools) {
@@ -241,6 +243,7 @@ export class ReadonlyMiraAmm {
       assetIn = assetOut;
       assetDecimalsOut = decimalsOut;
     }
-    return [currentRate, assetDecimalsIn, assetDecimalsOut];
+    let rate = currentRate.toNumber() / DECIMALS_PRECISION
+    return [rate, assetDecimalsIn, assetDecimalsOut];
   }
 }

@@ -239,7 +239,17 @@ export class ReadonlyMiraAmm {
       if (assetIdIn == assetIn) {
         assetDecimalsIn = decimalsIn;
       }
-      currentRate = currentRate.mul(reserveOut).div(reserveIn);
+      if (poolId[2]) {
+        // stable
+        // TODO: temporary & fast solution based on the attempt to swap 100 tokens
+        const assetIn = 100;
+        const amountsOut = await this.getAmountsOut(assetIdIn, assetIn, pools);
+        const assetOut = amountsOut[amountsOut.length - 1][1];
+        currentRate = currentRate.mul(assetOut).div(assetIn);
+      } else {
+        // volatile
+        currentRate = currentRate.mul(reserveOut).div(reserveIn);
+      }
       assetIn = assetOut;
       assetDecimalsOut = decimalsOut;
     }

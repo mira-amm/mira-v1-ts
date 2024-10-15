@@ -242,8 +242,10 @@ export class ReadonlyMiraAmm {
     for (let poolId of pools.slice().reverse()) {
       if (poolId[0] === assetIdIn) {
         assetIdIn = poolId[1];
-      } else {
+      } else if (poolId[1] === assetIdIn) {
         assetIdIn = poolId[0];
+      } else {
+        throw new Error('Incorrect pools');
       }
     }
 
@@ -253,6 +255,7 @@ export class ReadonlyMiraAmm {
     const fees = await this.fees();
     const volatileFee = fees.lpFeeVolatile.toNumber() + fees.protocolFeeVolatile.toNumber();
     for (const poolId of pools) {
+      console.log("Asset in:", assetIn, "Pool:", poolId);
       const pool = await this.poolMetadata(poolId);
       if (!pool) {
         throw new Error(`Pool not found ${poolId}`);

@@ -1,6 +1,6 @@
 {
   "name": "mira-dex-ts",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "description": "TypeScript SDK for Mira DEX",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

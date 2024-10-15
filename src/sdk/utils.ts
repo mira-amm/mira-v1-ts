@@ -78,3 +78,7 @@ export function reorderAssetContracts(tokenAContract: string,
     [tokenBContract, tokenBSubId, tokenAContract, tokenASubId];
   return [token0Contract, token0SubId, token1Contract, token1SubId]
 }
+
+export function poolContainsAsset(poolId: PoolId, asset: AssetId): boolean {
+  return poolId[0].bits === asset.bits || poolId[1].bits === asset.bits;
+}

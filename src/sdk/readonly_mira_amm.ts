@@ -2,7 +2,7 @@ import {AssetId, BigNumberish, BN, Provider} from "fuels";
 import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
-import {arrangePoolParams, assetInput, poolIdInput, reorderPoolId} from "./utils";
+import {arrangePoolParams, assetInput, poolContainsAsset, poolIdInput, reorderPoolId} from "./utils";
 import {addFee, BASIS_POINTS, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
 
 const DECIMALS_PRECISION = 1000000000000
@@ -230,13 +230,14 @@ export class ReadonlyMiraAmm {
       throw new Error('No pools provided');
     }
     let lastPool = pools[pools.length - 1];
-    if (lastPool[0] !== assetId && lastPool[1] !== assetId) {
+    if (!poolContainsAsset(lastPool, assetId)) {
       pools = pools.slice().reverse();
+      lastPool = pools[pools.length - 1];
+      if (!poolContainsAsset(lastPool, assetId)) {
+        throw new Error('Asset not found in border pools');
+      }
     }
-    lastPool = pools[pools.length - 1];
-    if (lastPool[0] !== assetId && lastPool[1] !== assetId) {
-      throw new Error('Asset not found in border pools');
-    }
+
     let assetIdIn = assetId;
     for (let poolId of pools.slice().reverse()) {
       if (poolId[0] === assetIdIn) {

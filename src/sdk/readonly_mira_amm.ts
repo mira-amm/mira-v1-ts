@@ -255,7 +255,6 @@ export class ReadonlyMiraAmm {
     const fees = await this.fees();
     const volatileFee = fees.lpFeeVolatile.toNumber() + fees.protocolFeeVolatile.toNumber();
     for (const poolId of pools) {
-      console.log("Asset in:", assetIn, "Pool:", poolId);
       const pool = await this.poolMetadata(poolId);
       if (!pool) {
         throw new Error(`Pool not found ${poolId}`);
@@ -269,11 +268,11 @@ export class ReadonlyMiraAmm {
       if (poolId[2]) {
         // stable
         // TODO: temporary & fast solution based on the attempt to swap 100 tokens
-        const assetIn = 100;
+        const assetAmountIn = 100;
         // already accounts for fees
-        const amountsOut = await this.getAmountsOut(assetIdIn, assetIn, pools);
+        const amountsOut = await this.getAmountsOut(assetIn, assetAmountIn, [poolId]);
         const assetOut = amountsOut[amountsOut.length - 1][1];
-        currentRate = currentRate.mul(assetIn).div(assetOut);
+        currentRate = currentRate.mul(assetAmountIn).div(assetOut);
       } else {
         // volatile
         currentRate = currentRate.mul(reserveIn).div(reserveOut).mul(BASIS_POINTS.sub(volatileFee)).div(BASIS_POINTS);

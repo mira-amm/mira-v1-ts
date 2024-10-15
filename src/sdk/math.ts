@@ -2,7 +2,7 @@ import {BN} from "fuels";
 import {AmmFees, PoolId} from "./model";
 import {InsufficientReservesError, InvalidAmountError} from "./errors";
 
-const BASIS_POINTS = new BN(10000);
+export const BASIS_POINTS = new BN(10000);
 const ONE_E_18 = new BN(10).pow(new BN(18));
 
 function adjust(amount: BN, powDecimals: BN): BN {

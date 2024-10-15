@@ -3,7 +3,7 @@ import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
 import {MiraAmmContract} from "./typegen/MiraAmmContract";
 import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
 import {arrangePoolParams, assetInput, poolIdInput, reorderPoolId} from "./utils";
-import {addFee, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
+import {addFee, BASIS_POINTS, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
 
 const DECIMALS_PRECISION = 1000000000000
 
@@ -221,6 +221,7 @@ export class ReadonlyMiraAmm {
     return amountsIn[amountsIn.length - 1];
   }
 
+  // Returns the price of the output asset relative to the input asset
   async getCurrentRate(
     assetIdIn: AssetId,
     pools: PoolId[]
@@ -228,6 +229,8 @@ export class ReadonlyMiraAmm {
     let currentRate = new BN(DECIMALS_PRECISION);
     let assetIn = assetIdIn;
     let assetDecimalsIn, assetDecimalsOut;
+    const fees = await this.fees();
+    const volatileFee = fees.lpFeeVolatile.toNumber() + fees.protocolFeeVolatile.toNumber();
     for (const poolId of pools) {
       const pool = await this.poolMetadata(poolId);
       if (!pool) {
@@ -243,12 +246,13 @@ export class ReadonlyMiraAmm {
         // stable
         // TODO: temporary & fast solution based on the attempt to swap 100 tokens
         const assetIn = 100;
+        // already accounts for fees
         const amountsOut = await this.getAmountsOut(assetIdIn, assetIn, pools);
         const assetOut = amountsOut[amountsOut.length - 1][1];
-        currentRate = currentRate.mul(assetOut).div(assetIn);
+        currentRate = currentRate.mul(assetIn).div(assetOut);
       } else {
         // volatile
-        currentRate = currentRate.mul(reserveOut).div(reserveIn);
+        currentRate = currentRate.mul(reserveIn).div(reserveOut).mul(BASIS_POINTS.sub(volatileFee)).div(BASIS_POINTS);
       }
       assetIn = assetOut;
       assetDecimalsOut = decimalsOut;

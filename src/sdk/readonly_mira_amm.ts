@@ -221,11 +221,31 @@ export class ReadonlyMiraAmm {
     return amountsIn[amountsIn.length - 1];
   }
 
-  // Returns the price of the output asset relative to the input asset
+  // Returns the price of the provided assetId retrieved through the provided pools
   async getCurrentRate(
-    assetIdIn: AssetId,
+    assetId: AssetId,
     pools: PoolId[]
   ): Promise<[number, number?, number?]> {
+    if (pools.length === 0) {
+      throw new Error('No pools provided');
+    }
+    let lastPool = pools[pools.length - 1];
+    if (lastPool[0] !== assetId && lastPool[1] !== assetId) {
+      pools = pools.slice().reverse();
+    }
+    lastPool = pools[pools.length - 1];
+    if (lastPool[0] !== assetId && lastPool[1] !== assetId) {
+      throw new Error('Asset not found in border pools');
+    }
+    let assetIdIn = assetId;
+    for (let poolId of pools.slice().reverse()) {
+      if (poolId[0] === assetIdIn) {
+        assetIdIn = poolId[1];
+      } else {
+        assetIdIn = poolId[0];
+      }
+    }
+
     let currentRate = new BN(DECIMALS_PRECISION);
     let assetIn = assetIdIn;
     let assetDecimalsIn, assetDecimalsOut;

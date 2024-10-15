@@ -240,9 +240,9 @@ export class ReadonlyMiraAmm {
 
     let assetIdIn = assetId;
     for (let poolId of pools.slice().reverse()) {
-      if (poolId[0] === assetIdIn) {
+      if (poolId[0].bits === assetIdIn.bits) {
         assetIdIn = poolId[1];
-      } else if (poolId[1] === assetIdIn) {
+      } else if (poolId[1].bits === assetIdIn.bits) {
         assetIdIn = poolId[0];
       } else {
         throw new Error('Incorrect pools');
@@ -263,7 +263,7 @@ export class ReadonlyMiraAmm {
       const [reserveIn, reserveOut, assetOut, decimalsIn, decimalsOut] = poolId[0].bits === assetIn.bits ?
         [pool.reserve0, pool.reserve1, poolId[1], pool.decimals0, pool.decimals1] :
         [pool.reserve1, pool.reserve0, poolId[0], pool.decimals1, pool.decimals0];
-      if (assetIdIn == assetIn) {
+      if (assetIdIn.bits === assetIn.bits) {
         assetDecimalsIn = decimalsIn;
       }
       if (poolId[2]) {

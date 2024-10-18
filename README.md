@@ -10,7 +10,8 @@ the Decentralized Exchange on [Fuel blockchain](https://fuel.network/).
 4. [Data types](#data_types)
 5. [MiraAmm Class](#mira-amm)
 6. [ReadonlyMiraAmm Class](#readonly-mira-amm)
-7. [Contributions](#contributions)
+7. [Deployments](#deployments)
+8. [Contributions](#contributions)
 
 ## Overview <a name="overview"></a>
 
@@ -269,6 +270,10 @@ const requiredInputAmount = await readonlyMiraAmm.previewSwapExactOutput(assetId
 - `assetIdOut`: Asset ID of the output token.
 - `assetAmountOut`: Number of output tokens.
 - `pools`: List of pools to route the swap.
+
+## Deployments <a name="deployments"></a>
+Mainnet contract id: `0x2e40f2b244b98ed6b8204b3de0156c6961f98525c8162f80162fcf53eebd90e7`
+Testnet contract id: `0x05e5fa8c29cbc326beac9758634946e74f69b293b7e7d326f1b539f33b8c7f56`
 
 ---
 

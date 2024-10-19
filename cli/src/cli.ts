@@ -140,7 +140,7 @@ program
   .action(async (contractId?) => {
     contractId = contractId == 'null' ? undefined : contractId;
     let request = await mira.setHook(contractId ?? undefined, txParams);
-    await send(request, "transfer-ownership");
+    await send(request, "set-hook");
   });
 
 program

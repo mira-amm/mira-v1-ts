@@ -240,6 +240,18 @@ export class MiraAmm {
     return await this.prepareRequest(request);
   }
 
+  async setHook(
+    newAddress?: string,
+    txParams?: TxParams,
+  ): Promise<ScriptTransactionRequest> {
+    const request = await this.ammContract
+      .functions
+      .set_hook(newAddress ? contractIdInput(newAddress) : undefined)
+      .txParams(txParams ?? {})
+      .getTransactionRequest();
+    return await this.prepareRequest(request);
+  }
+
   private async fundRequest(request: ScriptTransactionRequest): Promise<ScriptTransactionRequest> {
     const gasCost = await this.account.getTransactionCost(request);
     return await this.account.fund(request, gasCost);

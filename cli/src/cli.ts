@@ -136,6 +136,14 @@ program
   });
 
 program
+  .command("set-hook contractId")
+  .action(async (contractId?) => {
+    contractId = contractId == 'null' ? undefined : contractId;
+    let request = await mira.setHook(contractId ?? undefined, txParams);
+    await send(request, "transfer-ownership");
+  });
+
+program
   .command("deploy")
   .action(async () => {
     await MiraAmm.deploy(wallet);

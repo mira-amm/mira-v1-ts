@@ -87,6 +87,16 @@ program
   });
 
 program
+  .command("swap-exact-output isStable assetA assetB maxInput output")
+  .action(async (isStable, assetA, assetB, maxInput, output) => {
+    isStable = isStable === "true";
+    const poolId = buildPoolId(assetA, assetB, isStable);
+    const deadline = await futureDeadline(provider);
+    const request = await mira.swapExactOutput(output, {bits: assetB}, maxInput, [poolId], deadline, txParams);
+    await send(request, "swap-exact-output");
+  });
+
+program
   .command("pool-meta isStable assetA assetB")
   .action(async (isStable, assetA, assetB) => {
     isStable = isStable === "true";

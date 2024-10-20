@@ -35,3 +35,9 @@ pnpx vite-node src/cli.ts amm-meta
 ```bash
 pnpx vite-node src/cli.ts pool-meta <isStable> <assetA> <assetB>
 ```
+
+## swap-exact-output
+
+```bash
+pnpx vite-node src/cli.ts swap-exact-output <isStable> <assetA> <assetB> <maxInput> <amountBOut>
+```

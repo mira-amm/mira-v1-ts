@@ -65,7 +65,7 @@ export function getAmountIn(
   if (isStable) {
     const xy: BN = k(true, reserveIn, reserveOut, powDecimalsIn, powDecimalsOut);
 
-    const amountOutAdjusted = adjust(outputAmount, powDecimalsIn);
+    const amountOutAdjusted = adjust(outputAmount, powDecimalsOut);
     const reserveInAdjusted = adjust(reserveIn, powDecimalsIn);
     const reserveOutAdjusted = adjust(reserveOut, powDecimalsOut);
 

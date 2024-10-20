@@ -271,6 +271,7 @@ export class MiraAmm {
     for (const contract of uniqueContracts) {
       request.addContractInputAndOutput(contract);
     }
+    await this.account.provider.estimateTxDependencies(request);
     return this.fundRequest(request);
   }
 }

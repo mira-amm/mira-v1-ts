@@ -100,15 +100,15 @@ function k(
     const _y: BN = y.mul(ONE_E_18).div(powDecimalsY);
     const _a: BN = _x.mul(_y).div(ONE_E_18);
     const _b: BN = _x.mul(_x).div(ONE_E_18).add(_y.mul(_y).div(ONE_E_18));
-    return _a.mul(_b).div(ONE_E_18); // x3y+y3x >= k
+    return _a.mul(_b); // x3y+y3x >= k
   } else {
     return x.mul(y); // xy >= k
   }
 }
 
 function f(x0: BN, y: BN): BN {
-  return x0.mul(y.mul(y).div(ONE_E_18).mul(y).div(ONE_E_18)).div(ONE_E_18)
-    .add(x0.mul(x0).div(ONE_E_18).mul(x0).div(ONE_E_18).mul(y).div(ONE_E_18));
+  return x0.mul(y.mul(y).div(ONE_E_18).mul(y).div(ONE_E_18))
+    .add(x0.mul(x0).div(ONE_E_18).mul(x0).div(ONE_E_18).mul(y));
 }
 
 function d(x0: BN, y: BN): BN {
@@ -127,10 +127,10 @@ function getY(x0: BN, xy: BN, y: BN): BN {
     kValue = f(x0, y);
 
     if (kValue.lt(xy)) {
-      dy = xy.sub(kValue).mul(ONE_E_18).div(d(x0, y));
+      dy = xy.sub(kValue).div(d(x0, y));
       y = y.add(dy);
     } else {
-      dy = kValue.sub(xy).mul(ONE_E_18).div(d(x0, y));
+      dy = kValue.sub(xy).div(d(x0, y));
       y = y.sub(dy);
     }
 

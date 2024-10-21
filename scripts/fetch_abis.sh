@@ -12,6 +12,7 @@ git clone git@github.com:mira-amm/mira-v1-periphery.git
 echo "Building Mira v1 core and periphery"
 
 cd mira-v1-core
+git checkout mainnet-deployment
 forc build --release
 
 cd ../..

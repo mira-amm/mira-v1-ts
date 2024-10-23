@@ -213,7 +213,7 @@ export class MiraAmm {
       .getTransactionRequest();
 
     let assetIn = assetOut;
-    for (const pool of pools) {
+    for (const pool of pools.reverse()) {
       if (pool[0].bits === assetIn.bits) {
         assetIn = pool[1];
       } else {

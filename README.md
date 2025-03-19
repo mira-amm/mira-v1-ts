@@ -29,6 +29,8 @@ npm install fuels
 npm install mira-dex-ts
 ```
 
+The Mira DEX SDK is [pure ESM](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c) library and therefore can't be used with CommonJS modules.
+
 ## Setup <a name="setup"></a>
 
 To start using the SDK, you need to instantiate the `MiraAmm` or `ReadonlyMiraAmm` classes by providing the appropriate

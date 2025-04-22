@@ -229,7 +229,7 @@ export class MiraAmm {
   }
 
   async transferOwnership(
-    newOwner: string,
+    newOwner: Address,
     txParams?: TxParams,
   ): Promise<ScriptTransactionRequest> {
     const request = await this.ammContract

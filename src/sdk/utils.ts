@@ -1,13 +1,14 @@
 import {AssetIdInput, ContractIdInput, IdentityInput} from "./typegen/MiraAmmContract";
-import {AbstractAddress, Address, arrayify, AssetId, BN, concat, sha256} from "fuels";
+import {Address, arrayify, AssetId, BN, concat, sha256} from "fuels";
 import {PoolId, PoolMetadata} from "./model";
 
 export function contractIdInput(contractId: string): ContractIdInput {
   return {bits: contractId};
 }
 
-export function addressInput(address: string | AbstractAddress): IdentityInput {
-  return {Address: {bits: Address.fromAddressOrString(address).toB256()}};
+export function addressInput(address: Address): IdentityInput {
+  const addressInstance = address instanceof Address ? address : new Address(address);
+  return { Address: { bits: addressInstance.toB256() } };
 }
 
 export function assetInput(asset: AssetId): AssetIdInput {

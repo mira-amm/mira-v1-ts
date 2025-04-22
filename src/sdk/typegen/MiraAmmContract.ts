@@ -12,8 +12,8 @@ import { Contract, Interface } from "fuels";
 import type {
   Provider,
   Account,
+  Address,
   StorageSlot,
-  AbstractAddress,
   BigNumberish,
   BN,
   Bytes,
@@ -1309,7 +1309,7 @@ export class MiraAmmContract extends Contract {
   };
 
   constructor(
-    id: string | AbstractAddress,
+    id: string | Address,
     accountOrProvider: Account | Provider,
   ) {
     super(id, abi, accountOrProvider);

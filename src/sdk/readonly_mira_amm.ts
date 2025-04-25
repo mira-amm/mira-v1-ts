@@ -1,9 +1,9 @@
-import {AssetId, BigNumberish, BN, Provider} from "fuels";
-import {DEFAULT_AMM_CONTRACT_ID} from "./constants";
-import {MiraAmmContract} from "./typegen/MiraAmmContract";
-import {AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata} from "./model";
-import {arrangePoolParams, assetInput, poolContainsAsset, poolIdInput, reorderPoolId} from "./utils";
-import {addFee, BASIS_POINTS, getAmountIn, getAmountOut, powDecimals, subtractFee} from "./math";
+import { AssetId, BigNumberish, BN, Provider } from "fuels";
+import { DEFAULT_AMM_CONTRACT_ID } from "./constants";
+import { MiraAmmContract, PoolMetadataOutput } from "./typegen/MiraAmmContract";
+import { AmmFees, AmmMetadata, Asset, LpAssetInfo, PoolId, PoolMetadata } from "./model";
+import { arrangePoolParams, assetInput, poolContainsAsset, poolIdInput, reorderPoolId } from "./utils";
+import { addFee, BASIS_POINTS, getAmountIn, getAmountOut, powDecimals, subtractFee } from "./math";
 
 const DECIMALS_PRECISION = 1000000000000
 
@@ -47,6 +47,36 @@ export class ReadonlyMiraAmm {
       decimals1: value.decimals_1,
     };
   }
+
+  async poolsMetadata(poolIds: PoolId[]): Promise<PoolMetadata[]> {
+
+    // contains poolIDs with normalized order of assets
+    const normalizedPoolIds: PoolId[] = [];
+
+    const calls = poolIds.map((poolId) => {
+      poolId = reorderPoolId(poolId);
+      normalizedPoolIds.push(poolId);
+      return this.ammContract.functions.pool_metadata(poolIdInput(poolId))
+    })
+
+    const { waitForResult } = await this.ammContract.multiCall(
+      calls
+    ).call()
+
+    const { value: results } = await waitForResult();
+
+    return results.map((value: PoolMetadataOutput, index: number) => (
+      {
+        poolId: normalizedPoolIds[index],
+        reserve0: value.reserve_0,
+        reserve1: value.reserve_1,
+        liquidity: [value.liquidity.id, value.liquidity.amount],
+        decimals0: value.decimals_0,
+        decimals1: value.decimals_1,
+      }
+    ));
+  }
+
 
   async fees(): Promise<AmmFees> {
     const result = await this.ammContract.functions.fees().get();

@@ -35,3 +35,9 @@ export type LpAssetInfo = {
   decimals: number,
   totalSupply: BN,
 }
+
+export type Route = { pools: PoolId[] };
+export type MultiRouteAmountsOutResult = {
+  route: Route;
+  amounts: Asset[];
+}[];

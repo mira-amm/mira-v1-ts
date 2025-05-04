@@ -83,3 +83,7 @@ export function reorderAssetContracts(tokenAContract: string,
 export function poolContainsAsset(poolId: PoolId, asset: AssetId): boolean {
   return poolId[0].bits === asset.bits || poolId[1].bits === asset.bits;
 }
+export function poolIdToString(poolId: PoolId): string {
+  const [asset0, asset1, stable] = poolId;
+  return `${asset0.bits}-${asset1.bits}-${stable}`;
+}

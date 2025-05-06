@@ -6,10 +6,6 @@ import { Option } from './typegen/common';
 import { MiraAmmContract, PoolMetadataOutput } from "./typegen/MiraAmmContract";
 import { arrangePoolParams, assetInput, poolContainsAsset, poolIdInput, poolIdToString, reorderPoolId, } from "./utils";
 
-
-
-
-
 const DECIMALS_PRECISION = 1000000000000
 
 export class ReadonlyMiraAmm {
@@ -80,10 +76,8 @@ export class ReadonlyMiraAmm {
       const results = await this.ammContract.multiCall(calls).get();
       const metadataMap = new Map<string, PoolMetadata>();
 
-      // @ts-ignore
-      results.forEach((result: DryRunResult<Option<PoolMetadataOutput>>, index: number) => {
+      results.value.forEach((value: Option<PoolMetadataOutput>, index: number) => {
         const poolId = uniquePoolIds[index];
-        const value = result.value;
 
         if (value) {
           const metadata: PoolMetadata = {
@@ -195,10 +189,13 @@ export class ReadonlyMiraAmm {
 
     // Calculate amounts out for each route
     const results: MultiRouteAmountsOutResult =
-      routes.map(route => ({
-        route,
-        amounts:  this.calculateRouteAmountsOut(assetIdIn, assetAmountIn, route, poolMetadataMap, fees),
-      }))
+      routes.map(route => {
+        const amountsOut = this.calculateRouteAmountsOut(assetIdIn, assetAmountIn, route, poolMetadataMap, fees);
+        return {
+          route,
+          amounts: amountsOut[amountsOut.length - 1],
+        }
+      })
     
     return results;
   }

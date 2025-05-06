@@ -39,5 +39,5 @@ export type LpAssetInfo = {
 export type Route = { pools: PoolId[] };
 export type MultiRouteAmountsOutResult = {
   route: Route;
-  amounts: Asset[];
+  amounts: Asset;
 }[];

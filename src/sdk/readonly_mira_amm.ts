@@ -1,10 +1,11 @@
 import { AssetId, BigNumberish, BN, DryRunResult, Provider } from "fuels";
 import { DEFAULT_AMM_CONTRACT_ID } from "./constants";
 import { addFee, BASIS_POINTS, getAmountIn, getAmountOut, powDecimals, subtractFee } from "./math";
-import { AmmFees, AmmMetadata, Asset, LpAssetInfo, MultiRouteAmountsOutResult, PoolId, PoolMetadata, Route } from "./model";
+import { AmmFees, AmmMetadata, Asset, LpAssetInfo, MultiRouteAmountsResult, PoolId, PoolMetadata, Route } from "./model";
 import { Option } from './typegen/common';
 import { MiraAmmContract, PoolMetadataOutput } from "./typegen/MiraAmmContract";
 import { arrangePoolParams, assetInput, poolContainsAsset, poolIdInput, poolIdToString, reorderPoolId, } from "./utils";
+import { InsufficientReservesError } from './errors';
 
 const DECIMALS_PRECISION = 1000000000000
 
@@ -150,6 +151,68 @@ export class ReadonlyMiraAmm {
     return amountsOut;
   }
 
+
+  /**
+   * Calculates amounts in for a single route
+   * @param assetIdOut Output asset ID
+   * @param assetAmountOut Output amount
+   * @param route Route containing pool IDs
+   * @param poolMetadataMap Map of pool metadata
+   * @param fees AMM fees
+   * @returns Array of assets with amounts
+   */
+  private calculateRouteAmountsIn(
+    assetIdOut: AssetId,
+    assetAmountOut: BigNumberish,
+    route: Route,
+    poolMetadataMap: Map<string, PoolMetadata>,
+    fees: AmmFees
+  ): Asset[] {
+    const assetAmount = new BN(assetAmountOut);
+    if (assetAmount.isNeg() || assetAmount.isZero()) {
+      throw new Error("Non-positive output amount");
+    }
+
+    let currentAsset = assetIdOut;
+    let currentAmount = assetAmount;
+    const amountsIn: Asset[] = [[currentAsset, currentAmount]];
+
+    // Process pools in reverse order for calculating input amounts
+    for (const poolId of [...route.pools].reverse()) {
+      const reorderedPoolId = reorderPoolId(poolId);
+      const poolKey = poolIdToString(reorderedPoolId);
+      const pool = poolMetadataMap.get(poolKey);
+      if (!pool) {
+        throw new Error(`Pool metadata not found for poolId: ${poolKey}`);
+      }
+
+      const [assetIn, reserveOut, reserveIn, decimalsOut, decimalsIn] = arrangePoolParams(pool, currentAsset);
+      try {
+        let amountIn = getAmountIn(
+          reorderedPoolId[2],
+          reserveIn,
+          reserveOut,
+          powDecimals(decimalsIn),
+          powDecimals(decimalsOut),
+          currentAmount
+        );
+        
+        // Add fee to amount in
+        amountIn = addFee(reorderedPoolId, amountIn, fees);
+
+        currentAsset = assetIn;
+        currentAmount = amountIn;
+        amountsIn.push([currentAsset, currentAmount]);
+      } catch(err) {
+        if(err instanceof InsufficientReservesError) 
+          amountsIn.push([currentAsset, new BN(0)]);
+        else throw err;
+      }
+    }
+
+    return amountsIn;
+  }
+
   /**
    * Calculates amounts out for multiple routes using multicall
    * @param assetIdIn Input asset ID
@@ -163,7 +226,7 @@ export class ReadonlyMiraAmm {
     assetAmountIn: BigNumberish,
     routes: Route[],
     assetIdOut: AssetId
-  ): Promise<MultiRouteAmountsOutResult> {
+  ): Promise<MultiRouteAmountsResult> {
     if (!routes.length) {
       throw new Error("No routes provided");
     }
@@ -188,7 +251,7 @@ export class ReadonlyMiraAmm {
     const fees = await this.fees();
 
     // Calculate amounts out for each route
-    const results: MultiRouteAmountsOutResult =
+    const results: MultiRouteAmountsResult =
       routes.map(route => {
         const amountsOut = this.calculateRouteAmountsOut(assetIdIn, assetAmountIn, route, poolMetadataMap, fees);
         return {
@@ -200,6 +263,59 @@ export class ReadonlyMiraAmm {
     return results;
   }
 
+
+
+  /**
+   * Calculates amounts in for multiple routes using multicall
+   * @param assetIdOut Output asset ID
+   * @param assetAmountOut Output amount
+   * @param routes Array of routes
+   * @param assetIdIn Expected input asset ID
+   * @returns Array of route results with input amounts
+   */
+  async getMultiRouteAmountsIn(
+    assetIdOut: AssetId,
+    assetAmountOut: BigNumberish,
+    routes: Route[],
+    assetIdIn: AssetId
+  ): Promise<MultiRouteAmountsResult> {
+    if (!routes.length) {
+      throw new Error("No routes provided");
+    }
+
+    // Validate routes and collect unique pool IDs
+    const allPoolIds = routes.flatMap(route => route.pools);
+    for (const route of routes) {
+      let currentAsset = assetIdOut;
+      for (const poolId of [...route.pools].reverse()) {
+        if (!poolId[0].bits.includes(currentAsset.bits) && !poolId[1].bits.includes(currentAsset.bits)) {
+          throw new Error(`Invalid route: Pool ${poolIdToString(poolId)} does not contain asset ${currentAsset.bits}`);
+        }
+        currentAsset = poolId[0].bits === currentAsset.bits ? poolId[1] : poolId[0];
+      }
+      if (currentAsset.bits !== assetIdIn.bits) {
+        throw new Error(`Route does not start with expected input asset: ${assetIdIn.bits}`);
+      }
+    }
+
+
+
+    // Fetch all pool metadata in one multicall
+    const poolMetadataMap = await this.fetchMultiPoolMetadata(allPoolIds);
+    const fees = await this.fees();
+
+    // Calculate amounts in for each route
+    const results: MultiRouteAmountsResult =
+      routes.map(route => {
+        const amountsIn = this.calculateRouteAmountsIn(assetIdOut, assetAmountOut, route, poolMetadataMap, fees);
+        return {
+          route,
+          amounts: amountsIn[amountsIn.length - 1],
+        }
+      })
+    
+    return results;
+}
 
   async fees(): Promise<AmmFees> {
     const result = await this.ammContract.functions.fees().get();

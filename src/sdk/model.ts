@@ -37,7 +37,7 @@ export type LpAssetInfo = {
 }
 
 export type Route = { pools: PoolId[] };
-export type MultiRouteAmountsOutResult = {
+export type MultiRouteAmountsResult = {
   route: Route;
   amounts: Asset;
 }[];
